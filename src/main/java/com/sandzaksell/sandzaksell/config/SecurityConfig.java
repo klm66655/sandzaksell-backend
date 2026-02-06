@@ -75,7 +75,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // Dozvoli i 5173 (Vite) i 8081 (gde ti je React trenutno)
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:8081", "sandzaksell-backend-production.up.railway.app"));
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:8081", "https://sandzaksell-backend-production.up.railway.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control"));
         config.setAllowCredentials(true);
