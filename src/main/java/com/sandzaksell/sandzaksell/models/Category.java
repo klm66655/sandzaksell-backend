@@ -2,6 +2,7 @@ package com.sandzaksell.sandzaksell.models;
 
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -24,6 +25,7 @@ public class Category {
     private String iconUrl; // Link do ikonice za React frontend
 
     // Jedna kategorija ima mnogo oglasa
+    @JsonIgnore
     @OneToMany(mappedBy = "category")
     private List<Ad> ads;
 }

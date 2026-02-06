@@ -1,5 +1,7 @@
 package com.sandzaksell.sandzaksell.models;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,6 +32,13 @@ public class User {
     @Column(name = "token_balance")
     private Integer tokenBalance = 0;
 
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
+    @Column(name = "enabled")
+    private Boolean enabled = true; // Korisnik je aktivan po defaultu
+
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Ad> ads;
 }
