@@ -9,7 +9,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/ads")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "https://sandzak-sell-marketplace.vercel.app"})
 public class AdController {
 
     // Spring vidi ovo i automatski ga ubacuje (Dependency Injection)
