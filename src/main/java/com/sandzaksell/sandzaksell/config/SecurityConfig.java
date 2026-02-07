@@ -48,13 +48,16 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/login").permitAll()
                         .requestMatchers("/api/users/register").permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/api/ads/*/view").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/ads/**/view").permitAll()
+
                         .requestMatchers("/api/tokens/add").authenticated()
 
                         // 3. Dozvoli GET metode za oglase da bi sajt bio vidljiv i bez logina
                         .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/api/ads/{id}/view").permitAll()
+
 
                         .requestMatchers(HttpMethod.PUT, "/api/ads/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/ads/**").authenticated()

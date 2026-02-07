@@ -46,6 +46,7 @@ public class AdController {
         return adService.getAdsByUserId(userId);
     }
 
+    @CrossOrigin(origins = "*")
     @PostMapping("/{id}/view")
     public Ad trackView(@PathVariable Long id, @RequestParam Long userId) {
         return adService.incrementViews(id, userId);
