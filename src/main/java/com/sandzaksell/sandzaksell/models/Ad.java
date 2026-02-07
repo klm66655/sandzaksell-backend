@@ -64,7 +64,7 @@ public class Ad {
     @OneToMany(mappedBy = "ad", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Report> reports = new ArrayList<>();
 
-    private int views = 0; // Osnovni brojač
+    private Integer views = 0; // Osnovni brojač
 
     @ManyToMany
     @JoinTable(
