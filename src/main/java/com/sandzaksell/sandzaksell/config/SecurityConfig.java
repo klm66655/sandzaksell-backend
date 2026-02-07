@@ -54,6 +54,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/api/ads/*/view").permitAll()
+
                         .requestMatchers(HttpMethod.PUT, "/api/ads/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/ads/**").authenticated()
 
