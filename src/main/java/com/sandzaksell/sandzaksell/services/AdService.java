@@ -67,17 +67,22 @@ public class AdService {
         Ad ad = adRepository.findById(adId)
                 .orElseThrow(() -> new RuntimeException("Oglas nije nađen"));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
-
-        // Provera: Ako korisnik NIJE u setu onih koji su videli oglas
-        if (!ad.getViewedByUsers().contains(user)) {
-            ad.getViewedByUsers().add(user); // Dodaj ga u listu
-            ad.setViews(ad.getViews() + 1);  // Povećaj broj pregleda
+        // Ako korisnik nije ulogovan (userId je null), samo uvećaj ukupan broj pregleda
+        if (userId == null) {
+            ad.setViews((ad.getViews() == null ? 0 : ad.getViews()) + 1);
             return adRepository.save(ad);
         }
 
-        return ad; // Vrati oglas bez promena ako je već gledao
+        // Ako je ulogovan, proveri da li je već gledao oglas (unique views)
+        User user = userRepository.findById(userId).orElse(null);
+
+        if (user != null && !ad.getViewedByUsers().contains(user)) {
+            ad.getViewedByUsers().add(user);
+            ad.setViews((ad.getViews() == null ? 0 : ad.getViews()) + 1);
+            return adRepository.save(ad);
+        }
+
+        return ad;
     }
 
     @Transactional

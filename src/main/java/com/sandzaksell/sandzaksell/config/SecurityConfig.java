@@ -49,7 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/register").permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/ads/*/view").permitAll()
-                        
+
 
                         .requestMatchers("/api/tokens/add").authenticated()
 
