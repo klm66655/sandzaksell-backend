@@ -60,6 +60,26 @@ public class AdService {
         return adRepository.findByLocationIgnoreCase(location);
     }
 
+    // Dodaj ovo u AdService.java
+
+    @Transactional
+    public Ad incrementViews(Long adId, Long userId) {
+        Ad ad = adRepository.findById(adId)
+                .orElseThrow(() -> new RuntimeException("Oglas nije nađen"));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+
+        // Provera: Ako korisnik NIJE u setu onih koji su videli oglas
+        if (!ad.getViewedByUsers().contains(user)) {
+            ad.getViewedByUsers().add(user); // Dodaj ga u listu
+            ad.setViews(ad.getViews() + 1);  // Povećaj broj pregleda
+            return adRepository.save(ad);
+        }
+
+        return ad; // Vrati oglas bez promena ako je već gledao
+    }
+
     @Transactional
     public Ad setAdPremium(Long id) {
         Ad ad = adRepository.findById(id)

@@ -64,6 +64,17 @@ public class Ad {
     @OneToMany(mappedBy = "ad", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Report> reports = new ArrayList<>();
 
+    private int views = 0; // Osnovni brojač
+
+    @ManyToMany
+    @JoinTable(
+            name = "ad_views",
+            joinColumns = @JoinColumn(name = "ad_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    @JsonIgnore // Ne želimo da šaljemo čitavu listu korisnika u JSON-u, samo broj
+    private java.util.Set<User> viewedByUsers = new java.util.HashSet<>();
+
     @JsonProperty("imageUrls")
     public void setImageUrls(List<String> urls) {
         if (urls != null) {
