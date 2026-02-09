@@ -13,7 +13,7 @@ public class MailConfig {
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost("smtp.gmail.com");
-        mailSender.setPort(587);
+        mailSender.setPort(465);
 
         // Ovde unesi podatke direktno da eliminišemo greške iz .properties fajla
         mailSender.setUsername("kelimselmanovic123@gmail.com");
