@@ -43,24 +43,20 @@ public class UserController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         try {
-            // 1. Generiši 6 cifara kod
             String code = String.format("%06d", new Random().nextInt(999999));
-
-            // 2. Sačuvaj u bazu (Ovo radi, videli smo na slici!)
             userService.saveResetCode(email, code);
 
-            // 3. Pošalji na mail unutar try-catch bloka
-            // Tako da ako mail server pukne, korisnik ipak dobije 200 OK
-            try {
-                emailService.sendResetEmail(email, code);
-            } catch (Exception mailError) {
-                // Loguj grešku u konzolu, ali nemoj prekidati proces
-                System.err.println("GRESKA PRI SLANJU MAILA: " + mailError.getMessage());
-            }
+            // ASINHRONO SLANJE: Otvaramo novi thread da mejl ne koči frontend
+            new Thread(() -> {
+                try {
+                    emailService.sendResetEmail(email, code);
+                } catch (Exception e) {
+                    System.err.println("Railway blokada mejla: " + e.getMessage());
+                }
+            }).start();
 
-            // Vraćamo uspeh jer je kod u bazi - frontend će sad preći na Step 2
-            return ResponseEntity.ok(Map.of("message", "Kod je generisan. Proverite email ili bazu."));
-
+            // Odmah vraćamo OK. Browser dobija odgovor i CORS zaglavlja instant!
+            return ResponseEntity.ok(Map.of("message", "Kod je generisan."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
