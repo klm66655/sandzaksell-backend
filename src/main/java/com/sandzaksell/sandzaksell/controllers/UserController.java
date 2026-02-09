@@ -14,7 +14,7 @@ import java.util.Random;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-
+@CrossOrigin(origins = "https://sandzak-sell-marketplace.vercel.app", allowCredentials = "true")
 public class UserController {
 
     private final UserService userService;
