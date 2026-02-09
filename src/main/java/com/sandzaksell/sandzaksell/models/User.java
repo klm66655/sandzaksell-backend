@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import java.time.LocalDateTime;
 import lombok.NoArgsConstructor;
 
 
@@ -34,6 +35,13 @@ public class User {
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
+
+    // NOVI DEO ZA RESET LOZINKE
+    @Column(name = "reset_code")
+    private String resetCode;
+
+    @Column(name = "reset_code_expires_at")
+    private LocalDateTime resetCodeExpiresAt;
 
     @Column(name = "enabled")
     private Boolean enabled = true; // Korisnik je aktivan po defaultu

@@ -48,6 +48,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/login").permitAll()
                         .requestMatchers("/api/users/register").permitAll()
 
+                        .requestMatchers("/api/users/forgot-password").permitAll()
+                        .requestMatchers("/api/users/reset-password").permitAll()
+
                         .requestMatchers(HttpMethod.POST, "/api/ads/*/view").permitAll()
 
 

@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import com.sandzaksell.sandzaksell.services.EmailService;
+import java.util.Random;
 
 @RestController
 @RequestMapping("/api/users")
@@ -16,6 +18,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final EmailService emailService;
 
     @PostMapping("/login")
     public LoginResponse login(@RequestBody User user) {
@@ -34,6 +37,39 @@ public class UserController {
         String newPassword = request.get("newPassword");
         userService.updatePassword(id, newPassword); // Implementiraj enkripciju šifre ovde!
         return ResponseEntity.ok("Lozinka uspešno promenjena");
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        try {
+            // 1. Generiši 6 cifara kod
+            String code = String.format("%06d", new Random().nextInt(999999));
+
+            // 2. Sačuvaj u bazu
+            userService.saveResetCode(email, code);
+
+            // 3. Pošalji na mail
+            emailService.sendResetEmail(email, code);
+
+            return ResponseEntity.ok(Map.of("message", "Kod je poslat na vaš email."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String code = request.get("code");
+        String newPassword = request.get("newPassword");
+
+        try {
+            userService.resetPasswordWithCode(email, code, newPassword);
+            return ResponseEntity.ok(Map.of("message", "Lozinka uspešno promenjena."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/register")

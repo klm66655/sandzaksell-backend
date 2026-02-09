@@ -60,6 +60,38 @@ public class UserService {
         return jwtService.generateToken(dbUser.getUsername(), List.of(dbUser.getRole()));
     }
 
+    // DODAJ OVO U UserService.java
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Korisnik sa tim emailom nije pronađen"));
+    }
+
+    @Transactional
+    public void saveResetCode(String email, String code) {
+        User user = getUserByEmail(email);
+        user.setResetCode(code);
+        user.setResetCodeExpiresAt(java.time.LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void resetPasswordWithCode(String email, String code, String newPassword) {
+        User user = getUserByEmail(email);
+
+        if (user.getResetCode() == null || !user.getResetCode().equals(code)) {
+            throw new RuntimeException("Pogrešan kod za resetovanje!");
+        }
+
+        if (user.getResetCodeExpiresAt().isBefore(java.time.LocalDateTime.now())) {
+            throw new RuntimeException("Kod je istekao!");
+        }
+
+        user.setPassword(encoder.encode(newPassword));
+        user.setResetCode(null); // Brišemo kod nakon uspešne promene
+        user.setResetCodeExpiresAt(null);
+        userRepository.save(user);
+    }
+
     @Transactional
     public void banUser(Long userId) {
         User user = getUserById(userId);

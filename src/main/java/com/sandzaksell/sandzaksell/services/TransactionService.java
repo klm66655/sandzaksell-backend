@@ -18,6 +18,7 @@ public class TransactionService {
         this.userRepository = userRepository;
     }
 
+
     @Transactional
     public Transaction createTransaction(Transaction transaction) {
         // 1. Spasimo transakciju u bazu
