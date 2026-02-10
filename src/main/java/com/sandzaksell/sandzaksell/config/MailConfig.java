@@ -12,19 +12,29 @@ public class MailConfig {
     @Bean
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        mailSender.setHost("smtp.gmail.com");
-        mailSender.setPort(465);
 
-        // Ovde unesi podatke direktno da eliminišemo greške iz .properties fajla
-        mailSender.setUsername("kelimselmanovic123@gmail.com");
-        mailSender.setPassword("datbrdvyhroatgex");
+        // 1. Brevo Host
+        mailSender.setHost("smtp-relay.brevo.com");
+
+        // 2. Port 2525 zaobilazi Railway firewall
+        mailSender.setPort(2525);
+
+        // 3. Tvoj Brevo Login (obično tvoj email)
+        mailSender.setUsername("a1f64f001@smtp-brevo.com");
+
+        // 4. Tvoj Brevo SMTP KEY (dugačak niz karaktera)
+        mailSender.setPassword("xsmtpsib-012170f3ad8e802f0ab39a6964a746391d41bbbf0a2cbb0126a4186c720676e1-2BBkbRvCISBJ41Vd");
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", "true");
+
+        // Za port 2525 na Brevo-u koristimo STARTTLS
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.starttls.required", "true");
-        props.put("mail.debug", "true"); // Ovo je KLJUČNO - ispisuje grešku u Railway logove
+
+        // Debug ostavi na true da vidiš u Railway logovima ako krene po zlu
+        props.put("mail.debug", "true");
 
         return mailSender;
     }
