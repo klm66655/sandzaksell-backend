@@ -66,6 +66,8 @@ public class Ad {
 
     private Integer views = 0; // Osnovni brojač
 
+    private boolean isUsed;
+
     @ManyToMany
     @JoinTable(
             name = "ad_views",
