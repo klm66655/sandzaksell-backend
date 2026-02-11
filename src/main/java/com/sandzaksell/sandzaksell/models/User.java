@@ -49,4 +49,21 @@ public class User {
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Ad> ads;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "reviewedUser", cascade = CascadeType.ALL)
+    private List<Review> reviewsReceived; // Recenzije koje su drugi ostavili ovom korisniku
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL)
+    private List<Review> reviewsGiven; // Recenzije koje je ovaj korisnik ostavio drugima
+
+    // Pomoćna metoda za računanje prosečne ocene
+    public Double getAverageRating() {
+        if (reviewsReceived == null || reviewsReceived.isEmpty()) return 0.0;
+        return reviewsReceived.stream()
+                .mapToInt(Review::getRating)
+                .average()
+                .orElse(0.0);
+    }
 }

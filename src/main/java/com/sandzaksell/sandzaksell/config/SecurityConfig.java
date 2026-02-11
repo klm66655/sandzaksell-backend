@@ -55,6 +55,9 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/user/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/add").authenticated()
+
 
                         .requestMatchers("/api/tokens/add").authenticated()
 
