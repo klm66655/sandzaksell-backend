@@ -66,7 +66,7 @@ public class Ad {
 
     private Integer views = 0; // Osnovni brojač
 
-    private boolean isUsed;
+    private Boolean isUsed = false;
 
     @ManyToMany
     @JoinTable(
