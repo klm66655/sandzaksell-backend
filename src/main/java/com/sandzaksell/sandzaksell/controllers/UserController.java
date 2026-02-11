@@ -39,6 +39,27 @@ public class UserController {
         return ResponseEntity.ok("Lozinka uspešno promenjena");
     }
 
+    @PostMapping("/google-login")
+    public LoginResponse googleLogin(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        String name = payload.get("name");
+        String googleId = payload.get("googleId");
+        String profileImage = payload.get("profileImage");
+
+        // Pozivamo servis da nađe ili napravi korisnika
+        User user = userService.processGoogleUser(email, name, googleId, profileImage);
+
+        // Generišemo JWT token koristeći tvoju postojeću "verify" logiku (ili sličnu)
+        String token = userService.generateTokenForGoogleUser(user);
+
+        return new LoginResponse(
+                token,
+                user.getId(),
+                user.getUsername(),
+                user.getRole()
+        );
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");

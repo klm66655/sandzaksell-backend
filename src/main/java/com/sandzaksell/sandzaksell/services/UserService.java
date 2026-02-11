@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -90,6 +91,43 @@ public class UserService {
         user.setResetCode(null); // Brišemo kod nakon uspešne promene
         user.setResetCodeExpiresAt(null);
         userRepository.save(user);
+    }
+
+    public User processGoogleUser(String email, String name, String googleId, String profileImage) {
+        return userRepository.findByEmail(email).map(user -> {
+            // Ako korisnik postoji, a nema googleId, dodajemo ga
+            if (user.getGoogleId() == null) {
+                user.setGoogleId(googleId);
+                return userRepository.save(user);
+            }
+            return user;
+        }).orElseGet(() -> {
+            // Registracija novog korisnika
+            User newUser = new User();
+            newUser.setEmail(email); // Polje iz tvog modela
+
+            // Za username stavljamo ime sa Google-a, a ako ga nema uzimamo deo mejla
+            String suggestedUsername = (name != null && !name.isEmpty()) ? name : email.split("@")[0];
+            newUser.setUsername(suggestedUsername);
+
+            newUser.setGoogleId(googleId); // Polje iz tvog modela
+            newUser.setProfileImageUrl(profileImage); // Polje iz tvog modela
+            newUser.setRole("ROLE_USER"); // Pratimo tvoj default iz modela
+            newUser.setTokenBalance(0); // Polje iz tvog modela
+            newUser.setEnabled(true); //
+
+            // Lozinka mora biti tu jer je nullable=false u tvom modelu
+            newUser.setPassword(new BCryptPasswordEncoder().encode(java.util.UUID.randomUUID().toString()));
+
+            return userRepository.save(newUser);
+        });
+    }
+    // Dodaj ovo u UserService.java
+    public String generateTokenForGoogleUser(User user) {
+        // Ovde pozivaš tvoj postojeći servis za tokene.
+        // Pošto je Google već potvrdio identitet, samo mu dajemo naš JWT za njegov username.
+        List<String> roles = Collections.singletonList(user.getRole());
+        return jwtService.generateToken(user.getUsername(), roles);
     }
 
     @Transactional
