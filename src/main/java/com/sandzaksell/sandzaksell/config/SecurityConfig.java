@@ -53,6 +53,8 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.POST, "/api/ads/*/view").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+
 
                         .requestMatchers("/api/tokens/add").authenticated()
 
