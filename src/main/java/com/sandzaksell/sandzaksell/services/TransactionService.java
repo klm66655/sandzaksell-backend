@@ -18,6 +18,10 @@ public class TransactionService {
         this.userRepository = userRepository;
     }
 
+    public boolean isTransactionProcessed(String paypalId) {
+        return transactionRepository.existsByPaypalOrderId(paypalId);
+    }
+
 
     @Transactional
     public Transaction createTransaction(Transaction transaction) {

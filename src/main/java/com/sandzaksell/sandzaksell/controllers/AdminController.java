@@ -10,6 +10,7 @@ import com.sandzaksell.sandzaksell.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,19 +19,20 @@ import java.util.List;
 @RequestMapping("/api/admin")
 @CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
-    @Autowired
-    private AdRepository adRepository;
 
-    @Autowired
+    private final AdRepository adRepository;
+
+
     private final AdService adService;
 
-    @Autowired
-    private ReportRepository reportRepository;
 
-    @Autowired
-    private UserService userService;
+    private final ReportRepository reportRepository;
+
+
+    private final UserService userService;
 
     // 1. Obriši bilo koji oglas
     @DeleteMapping("/ads/{id}")

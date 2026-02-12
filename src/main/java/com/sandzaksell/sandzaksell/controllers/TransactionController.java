@@ -6,32 +6,39 @@ import com.sandzaksell.sandzaksell.services.TransactionService;
 import com.sandzaksell.sandzaksell.repositories.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import lombok.RequiredArgsConstructor;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tokens")
-@CrossOrigin(origins = "*") // Dozvoljava React-u da pristupi API-ju
+@RequiredArgsConstructor // Koristi ovo da ne pišeš konstruktor ručno
 public class TransactionController {
 
     private final TransactionService transactionService;
     private final UserRepository userRepository;
 
-    public TransactionController(TransactionService transactionService, UserRepository userRepository) {
-        this.transactionService = transactionService;
-        this.userRepository = userRepository;
-    }
-
     @PostMapping("/add")
-    public ResponseEntity<?> addTokens(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> addTokens(@RequestBody Map<String, Object> payload, java.security.Principal principal) {
         try {
-            // Podaci koje šalje tvoj React (handlePaymentSuccess)
-            Long userId = Long.valueOf(payload.get("userId").toString());
+            if (principal == null) return ResponseEntity.status(401).body("Niste ulogovani");
+
+            // 1. Identitet uzimamo iz TOKENA, ne iz JSON-a
+            User user = userRepository.findByUsername(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
+
+            // 2. Podaci iz Paypala
             Integer amount = (Integer) payload.get("amount");
             String transactionId = (String) payload.get("transactionId");
 
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
+            // ZAŠTITA: Provjeri da li je neko već iskoristio ovaj isti PayPal ID
+            // (Moraš dodati metodu existsByPaypalOrderId u TransactionRepository)
+            if (transactionService.isTransactionProcessed(transactionId)) {
+                return ResponseEntity.badRequest().body("Ova transakcija je već obrađena!");
+            }
+
+            if (amount == null || amount <= 0) {
+                return ResponseEntity.badRequest().body("Nevalidan iznos");
+            }
 
             Transaction transaction = new Transaction();
             transaction.setUser(user);
@@ -40,10 +47,9 @@ public class TransactionController {
 
             Transaction saved = transactionService.createTransaction(transaction);
 
-            // Vraćamo korisnika sa novim balansom nazad u React
             return ResponseEntity.ok(saved.getUser());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Greška pri obradi uplate: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Greška: " + e.getMessage());
         }
     }
 }

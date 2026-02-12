@@ -2,6 +2,7 @@ package com.sandzaksell.sandzaksell.controllers;
 
 import com.sandzaksell.sandzaksell.models.Category;
 import com.sandzaksell.sandzaksell.services.CategoryService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class CategoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Category create(@RequestBody Category category) {
         return categoryService.saveCategory(category);
     }

@@ -78,6 +78,9 @@ public class SecurityConfig {
 
                         // 4. Admin rute
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
 
                         // 5. Sve ostalo zahteva login
                         .anyRequest().authenticated()
