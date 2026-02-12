@@ -32,15 +32,16 @@ public class AdController {
 
     @PostMapping
     public Ad create(@RequestBody Ad ad, Principal principal) {
-        // 1. Uzimamo email direktno iz sigurnosnog konteksta (tokena)
-        String email = principal.getName();
-        User realUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+        if (principal == null) throw new RuntimeException("Niste ulogovani!");
 
-        // 2. Forsiramo vlasnika (haker više ne može da podvali tuđi ID)
+        // 1. principal.getName() u tvom sistemu je USERNAME
+        String username = principal.getName();
+
+        // 2. Tražimo preko findByUsername (isto kao što radiš u ReviewController-u)
+        User realUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Korisnik sa username-om " + username + " nije nađen"));
+
         ad.setUser(realUser);
-
-        // 3. Resetujemo premium status (mora admin da ga odobri ili poseban servis)
         ad.setIsPremium(false);
 
         return adService.saveAd(ad);
