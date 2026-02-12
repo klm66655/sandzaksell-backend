@@ -96,12 +96,30 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // Dozvoli i 5173 (Vite) i 8081 (gde ti je React trenutno)
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:8081", "https://sandzaksell-backend-production.up.railway.app", "https://sandzak-sell-marketplace.vercel.app"));
+
+        // Dozvoli tačne rute
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://localhost:8081",
+                "https://sandzak-sell-marketplace.vercel.app"
+        ));
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type","Origin",
-                "Accept", "Cache-Control", "X-Requested-With"));
-        config.setAllowCredentials(true);
+
+        // DODATO: "Cookie" mora biti u listi dozvoljenih zaglavlja!
+        config.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Origin",
+                "Accept",
+                "X-Requested-With",
+                "Cookie"
+        ));
+
+        // DODATO: Ovo dozvoljava browseru da vidi Set-Cookie header
+        config.setExposedHeaders(List.of("Set-Cookie"));
+
+        config.setAllowCredentials(true); // OVO VEĆ IMAŠ, ALI JE BITNO
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
