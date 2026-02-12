@@ -2,6 +2,7 @@ package com.sandzaksell.sandzaksell.models;
 
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @ManyToOne
     @JoinColumn(name = "sender_id")
     private User sender; // Ko šalje poruku
@@ -28,6 +30,7 @@ public class Message {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "timestamp")
     private LocalDateTime timestamp = LocalDateTime.now();
 }

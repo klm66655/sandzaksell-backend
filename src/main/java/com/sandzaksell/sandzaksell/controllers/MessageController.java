@@ -26,9 +26,13 @@ public class MessageController {
     public Message send(@RequestBody Message message, Principal principal) {
         if (principal == null) throw new RuntimeException("Niste ulogovani!");
 
-        // ISPRAVNO: findByUsername
         User currentUser = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+
+        // SIGURNOST: Ne dozvoli slanje poruke samom sebi
+        if (currentUser.getId().equals(message.getReceiver().getId())) {
+            throw new RuntimeException("Ne možete poslati poruku sami sebi!");
+        }
 
         message.setSender(currentUser);
         return messageService.sendMessage(message);
@@ -36,15 +40,14 @@ public class MessageController {
 
     @GetMapping("/history/{u1}/{u2}")
     public List<Message> getHistory(@PathVariable Long u1, @PathVariable Long u2, Principal principal) {
-        if (principal == null) return new ArrayList<>();
+        if (principal == null) throw new RuntimeException("Pristup odbijen!");
 
-        // POPRAVKA: Ovde je bio findByEmail, promenjeno u findByUsername
         User currentUser = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
-        // SIGURNOST: Dozvoli pristup SAMO ako je ulogovani korisnik u1 ili u2
+        // SIGURNOST: Ako ulogovani lik nije ni u1 ni u2, IZBACI GA (403 Forbidden)
         if (!currentUser.getId().equals(u1) && !currentUser.getId().equals(u2)) {
-            return new ArrayList<>();
+            throw new RuntimeException("Nemate dozvolu da čitate ovaj razgovor!");
         }
 
         return messageService.getChatHistory(u1, u2);
