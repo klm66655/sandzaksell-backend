@@ -27,13 +27,13 @@ public class UserController {
         String token = userService.verify(user);
         User foundUser = userService.getUserByUsername(user.getUsername());
 
-        // KREIRANJE KUKIJA
-        Cookie jwtCookie = new Cookie("token", token);
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(true); // setuj na false ako testiraš lokalno bez HTTPS-a
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(3600); // 1 sat
-        response.addCookie(jwtCookie);
+        // RUČNO POSTAVLJANJE ZAGLAVLJA ZBOG SAMESITE POLITIKE
+        // Ovo rešava problem blokiranja na relaciji Vercel -> Railway
+        String cookieString = String.format(
+                "token=%s; Path=/; HttpOnly; Max-Age=3600; SameSite=None; Secure",
+                token
+        );
+        response.setHeader("Set-Cookie", cookieString);
 
         return ResponseEntity.ok(new LoginResponse(null, foundUser.getId(), foundUser.getUsername(), foundUser.getRole()));
     }
@@ -48,25 +48,21 @@ public class UserController {
         User user = userService.processGoogleUser(email, name, googleId, profileImage);
         String token = userService.generateTokenForGoogleUser(user);
 
-        // KREIRANJE KUKIJA I ZA GOOGLE
-        Cookie jwtCookie = new Cookie("token", token);
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(true);
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(3600);
-        response.addCookie(jwtCookie);
+        // ISTO I ZA GOOGLE LOGIN
+        String cookieString = String.format(
+                "token=%s; Path=/; HttpOnly; Max-Age=3600; SameSite=None; Secure",
+                token
+        );
+        response.setHeader("Set-Cookie", cookieString);
 
         return ResponseEntity.ok(new LoginResponse(null, user.getId(), user.getUsername(), user.getRole()));
     }
 
-    // DODAJEMO LOGOUT DA OBRSTI KUKI
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-        Cookie jwtCookie = new Cookie("token", null);
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(0); // Odmah uništava kuki
-        response.addCookie(jwtCookie);
+        // Kod logout-a samo setujemo Max-Age na 0
+        String cookieString = "token=; Path=/; HttpOnly; Max-Age=0; SameSite=None; Secure";
+        response.setHeader("Set-Cookie", cookieString);
         return ResponseEntity.ok(Map.of("message", "Odjavljeni ste"));
     }
 
