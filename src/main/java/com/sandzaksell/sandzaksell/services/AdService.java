@@ -25,31 +25,31 @@ public class AdService {
 
     @Transactional
     public Ad saveAd(Ad ad) {
-        // 1. Pronađi kompletnog korisnika iz baze
-        User user = userRepository.findById(ad.getUser().getId())
+        // 1. VIŠE NE VERUJEMO ID-u iz ad.getUser().getId() jer se može lažirati!
+        // Uzimamo korisnika koji je već setovan u kontroleru preko Principal-a
+        User user = userRepository.findByUsername(ad.getUser().getUsername())
                 .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
         if (ad.getId() == null) {
             ad.setCreatedAt(LocalDateTime.now());
         }
 
-        // 2. Proveri koliko slika stiže uz oglas
-        int numberOfImages = ad.getImages().size();
+        // 2. Provera slika (dodajemo null check da ne pukne)
+        int numberOfImages = (ad.getImages() != null) ? ad.getImages().size() : 0;
 
-        // 3. Logika za naplatu
+        // 3. Sigurna naplata - skidamo tokene SAMO onome ko je vlasnik oglasa
         if (numberOfImages > 5) {
             if (user.getTokenBalance() < 50) {
                 throw new RuntimeException("Nemate dovoljno tokena za više od 5 slika!");
             }
-            // Skini tokene
             user.setTokenBalance(user.getTokenBalance() - 50);
-            userRepository.save(user); // Sačuvaj novo stanje korisnika
-            System.out.println("Skinuto 50 tokena korisniku: " + user.getUsername());
+            userRepository.save(user);
         }
 
+        // Setujemo osvežen user objekat nazad u oglas pre čuvanja
+        ad.setUser(user);
         return adRepository.save(ad);
     }
-
     public void deleteAd(Long id) { adRepository.deleteById(id); }
 
     public List<Ad> getAdsByUserId(Long userId) {

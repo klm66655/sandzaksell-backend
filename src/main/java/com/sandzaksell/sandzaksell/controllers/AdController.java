@@ -50,10 +50,10 @@ public class AdController {
     @PutMapping("/{id}")
     public Ad updateAd(@PathVariable Long id, @RequestBody Ad adDetails, Principal principal) {
         Ad existingAd = adService.getAdById(id);
-        String currentUserEmail = principal.getName();
+        String currentUsername = principal.getName(); // Username iz tokena
 
-        // SIGURNOST: Samo vlasnik ili admin smeju da menjaju
-        if (!existingAd.getUser().getEmail().equals(currentUserEmail) && !isUserAdmin(principal)) {
+        // POPRAVKA: Poredimo username sa username-om, a ne emailom!
+        if (!existingAd.getUser().getUsername().equals(currentUsername) && !isUserAdmin(principal)) {
             throw new RuntimeException("Nemaš dozvolu da menjaš ovaj oglas!");
         }
 
@@ -68,10 +68,10 @@ public class AdController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id, Principal principal) {
         Ad existingAd = adService.getAdById(id);
-        String currentUserEmail = principal.getName();
+        String currentUsername = principal.getName();
 
-        // SIGURNOST: Provera vlasništva pre brisanja
-        if (existingAd.getUser().getEmail().equals(currentUserEmail) || isUserAdmin(principal)) {
+        // POPRAVKA: Ovde isto poredimo username!
+        if (existingAd.getUser().getUsername().equals(currentUsername) || isUserAdmin(principal)) {
             adService.deleteAd(id);
         } else {
             throw new RuntimeException("Nemaš dozvolu za brisanje!");
