@@ -26,24 +26,25 @@ public class MessageController {
     public Message send(@RequestBody Message message, Principal principal) {
         if (principal == null) throw new RuntimeException("Niste ulogovani!");
 
-        // POPRAVKA: Koristimo findByUsername umesto findByEmail
+        // ISPRAVNO: findByUsername
         User currentUser = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
-        // Postavljamo pošiljaoca iz tokena (sigurnost)
         message.setSender(currentUser);
-
         return messageService.sendMessage(message);
     }
 
     @GetMapping("/history/{u1}/{u2}")
     public List<Message> getHistory(@PathVariable Long u1, @PathVariable Long u2, Principal principal) {
-        User currentUser = userRepository.findByEmail(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (principal == null) return new ArrayList<>();
+
+        // POPRAVKA: Ovde je bio findByEmail, promenjeno u findByUsername
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
         // SIGURNOST: Dozvoli pristup SAMO ako je ulogovani korisnik u1 ili u2
         if (!currentUser.getId().equals(u1) && !currentUser.getId().equals(u2)) {
-            return new ArrayList<>(); // Vrati prazno, haker ne vidi ništa
+            return new ArrayList<>();
         }
 
         return messageService.getChatHistory(u1, u2);
@@ -51,8 +52,11 @@ public class MessageController {
 
     @GetMapping("/contacts/{userId}")
     public List<User> getContacts(@PathVariable Long userId, Principal principal) {
-        User currentUser = userRepository.findByEmail(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (principal == null) return new ArrayList<>();
+
+        // POPRAVKA: Ovde je bio findByEmail, promenjeno u findByUsername
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
         // SIGURNOST: Ne dozvoli da korisnik vidi tuđu listu kontakata
         if (!currentUser.getId().equals(userId)) {
