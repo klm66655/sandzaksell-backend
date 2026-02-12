@@ -42,19 +42,21 @@ public class UserController {
     }
 
     // --- OVDJE JE BILA RUPA - SADA JE ZAKLJUČANO ---
-    @PutMapping("/change-password") // IZBACILI SMO {id} IZ LINKA
+    @PutMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request, Principal principal) {
-        // Uzimamo email iz TOKENA, ne iz linka!
-        User currentUser = userService.getUserByEmail(principal.getName());
+        // principal.getName() ti vraća USERNAME, zato koristi getUserByUsername!
+        User currentUser = userService.getUserByUsername(principal.getName());
         String newPassword = request.get("newPassword");
 
         userService.updatePassword(currentUser.getId(), newPassword);
         return ResponseEntity.ok(Map.of("message", "Lozinka uspešno promenjena"));
     }
 
-    @PutMapping("/update-image") // IZBACILI SMO {id}
+    // 2. IZMENA ZA SLIKU
+    @PutMapping("/update-image")
     public ResponseEntity<?> updateProfileImage(@RequestBody Map<String, String> request, Principal principal) {
-        User currentUser = userService.getUserByEmail(principal.getName());
+        // Isto i ovde - traži po USERNAME
+        User currentUser = userService.getUserByUsername(principal.getName());
         String imageUrl = request.get("profileImageUrl");
 
         currentUser.setProfileImageUrl(imageUrl);
