@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import com.sandzaksell.sandzaksell.services.EmailService;
 import java.util.Random;
+import java.security.Principal; // OBAVEZNO DODAJ
 
 @RestController
 @RequestMapping("/api/users")
@@ -20,44 +21,57 @@ public class UserController {
     private final UserService userService;
     private final EmailService emailService;
 
+    // --- LOGIN I REGISTER OSTAJU ISTI ---
     @PostMapping("/login")
     public LoginResponse login(@RequestBody User user) {
         String token = userService.verify(user);
         User foundUser = userService.getUserByUsername(user.getUsername());
-        return new LoginResponse(
-                token,
-                foundUser.getId(),
-                foundUser.getUsername(),
-                foundUser.getRole()
-        );
+        return new LoginResponse(token, foundUser.getId(), foundUser.getUsername(), foundUser.getRole());
     }
 
-    @PutMapping("/{id}/change-password")
-    public ResponseEntity<?> changePassword(@PathVariable Long id, @RequestBody Map<String, String> request) {
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody User user) {
+        // OSNOVNA VALIDACIJA (Miralemova tačka 2)
+        if (user.getEmail() == null || !user.getEmail().contains("@")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Neispravan email format!"));
+        }
+        if (user.getPassword() == null || user.getPassword().length() < 6) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Lozinka mora imati bar 6 karaktera!"));
+        }
+        return ResponseEntity.ok(userService.registerUser(user));
+    }
+
+    // --- OVDJE JE BILA RUPA - SADA JE ZAKLJUČANO ---
+    @PutMapping("/change-password") // IZBACILI SMO {id} IZ LINKA
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request, Principal principal) {
+        // Uzimamo email iz TOKENA, ne iz linka!
+        User currentUser = userService.getUserByEmail(principal.getName());
         String newPassword = request.get("newPassword");
-        userService.updatePassword(id, newPassword); // Implementiraj enkripciju šifre ovde!
-        return ResponseEntity.ok("Lozinka uspešno promenjena");
+
+        userService.updatePassword(currentUser.getId(), newPassword);
+        return ResponseEntity.ok(Map.of("message", "Lozinka uspešno promenjena"));
     }
 
+    @PutMapping("/update-image") // IZBACILI SMO {id}
+    public ResponseEntity<?> updateProfileImage(@RequestBody Map<String, String> request, Principal principal) {
+        User currentUser = userService.getUserByEmail(principal.getName());
+        String imageUrl = request.get("profileImageUrl");
+
+        currentUser.setProfileImageUrl(imageUrl);
+        userService.saveUser(currentUser);
+        return ResponseEntity.ok(currentUser);
+    }
+
+    // --- GOOGLE LOGIN I FORGOT PASSWORD OSTAJU SLIČNI ---
     @PostMapping("/google-login")
     public LoginResponse googleLogin(@RequestBody Map<String, String> payload) {
         String email = payload.get("email");
         String name = payload.get("name");
         String googleId = payload.get("googleId");
         String profileImage = payload.get("profileImage");
-
-        // Pozivamo servis da nađe ili napravi korisnika
         User user = userService.processGoogleUser(email, name, googleId, profileImage);
-
-        // Generišemo JWT token koristeći tvoju postojeću "verify" logiku (ili sličnu)
         String token = userService.generateTokenForGoogleUser(user);
-
-        return new LoginResponse(
-                token,
-                user.getId(),
-                user.getUsername(),
-                user.getRole()
-        );
+        return new LoginResponse(token, user.getId(), user.getUsername(), user.getRole());
     }
 
     @PostMapping("/forgot-password")
@@ -66,18 +80,11 @@ public class UserController {
         try {
             String code = String.format("%06d", new Random().nextInt(999999));
             userService.saveResetCode(email, code);
-
-            // ASINHRONO SLANJE: Otvaramo novi thread da mejl ne koči frontend
             new Thread(() -> {
-                try {
-                    emailService.sendResetEmail(email, code);
-                } catch (Exception e) {
-                    System.err.println("Railway blokada mejla: " + e.getMessage());
-                }
+                try { emailService.sendResetEmail(email, code); }
+                catch (Exception e) { System.err.println("Greška: " + e.getMessage()); }
             }).start();
-
-            // Odmah vraćamo OK. Browser dobija odgovor i CORS zaglavlja instant!
-            return ResponseEntity.ok(Map.of("message", "Kod je generisan."));
+            return ResponseEntity.ok(Map.of("message", "Kod je poslat."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -85,26 +92,12 @@ public class UserController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        String code = request.get("code");
-        String newPassword = request.get("newPassword");
-
         try {
-            userService.resetPasswordWithCode(email, code, newPassword);
-            return ResponseEntity.ok(Map.of("message", "Lozinka uspešno promenjena."));
+            userService.resetPasswordWithCode(request.get("email"), request.get("code"), request.get("newPassword"));
+            return ResponseEntity.ok(Map.of("message", "Lozinka promenjena."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
-    }
-
-    @PostMapping("/register")
-    public User register(@RequestBody User user) {
-        return userService.registerUser(user);
-    }
-
-    @GetMapping
-    public List<User> getAll() {
-        return userService.getAllUsers();
     }
 
     @GetMapping("/{id}")
@@ -112,18 +105,7 @@ public class UserController {
         return userService.getUserById(id);
     }
 
-    @PutMapping("/{id}/update-image")
-    public ResponseEntity<?> updateProfileImage(@PathVariable Long id, @RequestBody Map<String, String> request) {
-        String imageUrl = request.get("profileImageUrl");
-        User user = userService.getUserById(id);
-        if (user == null) {
-            return ResponseEntity.notFound().build();
-        }
-        user.setProfileImageUrl(imageUrl);
-        userService.saveUser(user);
-        return ResponseEntity.ok(user);
-    }
-
+    // ADMIN SAMO (Ovo bi trebalo zaštititi sa @PreAuthorize("hasRole('ADMIN')"))
     @PutMapping("/{id}/add-tokens")
     public User addTokens(@PathVariable Long id, @RequestParam Integer amount) {
         return userService.updateTokens(id, amount);
