@@ -1,9 +1,13 @@
 package com.sandzaksell.sandzaksell.controllers;
 
 import com.sandzaksell.sandzaksell.models.Ad;
+import com.sandzaksell.sandzaksell.models.User;
 import com.sandzaksell.sandzaksell.services.AdService;
+import com.sandzaksell.sandzaksell.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -12,8 +16,8 @@ import java.util.List;
 @CrossOrigin(origins = {"http://localhost:5173", "https://sandzak-sell-marketplace.vercel.app"})
 public class AdController {
 
-    // Spring vidi ovo i automatski ga ubacuje (Dependency Injection)
     private final AdService adService;
+    private final UserRepository userRepository;
 
     @GetMapping
     public List<Ad> getAll() { return adService.getAllAds(); }
@@ -27,42 +31,76 @@ public class AdController {
     }
 
     @PostMapping
-    public Ad create(@RequestBody Ad ad) { return adService.saveAd(ad); }
+    public Ad create(@RequestBody Ad ad, Principal principal) {
+        // 1. Uzimamo email direktno iz sigurnosnog konteksta (tokena)
+        String email = principal.getName();
+        User realUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        // FIKSIRANO: Koristimo adService umesto adRepository
-        adService.deleteAd(id);
-    }
+        // 2. Forsiramo vlasnika (haker više ne može da podvali tuđi ID)
+        ad.setUser(realUser);
 
-    @PutMapping("/{id}/make-premium")
-    public Ad makePremium(@PathVariable Long id) {
-        return adService.setAdPremium(id);
-    }
+        // 3. Resetujemo premium status (mora admin da ga odobri ili poseban servis)
+        ad.setIsPremium(false);
 
-    @GetMapping("/user/{userId}")
-    public List<Ad> getAdsByUser(@PathVariable Long userId) {
-        // Ovo pretpostavlja da u AdService imaš metodu koja filtrira po User ID-u
-        return adService.getAdsByUserId(userId);
-    }
-
-    @CrossOrigin(origins = "*")
-    @PostMapping("/{id}/view")
-    public Ad trackView(@PathVariable Long id, @RequestParam Long userId) {
-        return adService.incrementViews(id, userId);
+        return adService.saveAd(ad);
     }
 
     @PutMapping("/{id}")
-    public Ad updateAd(@PathVariable Long id, @RequestBody Ad adDetails) {
+    public Ad updateAd(@PathVariable Long id, @RequestBody Ad adDetails, Principal principal) {
         Ad existingAd = adService.getAdById(id);
+        String currentUserEmail = principal.getName();
 
-        // Ažuriramo osnovna polja
+        // SIGURNOST: Samo vlasnik ili admin smeju da menjaju
+        if (!existingAd.getUser().getEmail().equals(currentUserEmail) && !isUserAdmin(principal)) {
+            throw new RuntimeException("Nemaš dozvolu da menjaš ovaj oglas!");
+        }
+
         existingAd.setTitle(adDetails.getTitle());
         existingAd.setPrice(adDetails.getPrice());
         existingAd.setDescription(adDetails.getDescription());
         existingAd.setLocation(adDetails.getLocation());
 
-        // Čuvamo preko postojećeg saveAd u servisu (on već ima logiku za tokene ako treba)
         return adService.saveAd(existingAd);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id, Principal principal) {
+        Ad existingAd = adService.getAdById(id);
+        String currentUserEmail = principal.getName();
+
+        // SIGURNOST: Provera vlasništva pre brisanja
+        if (existingAd.getUser().getEmail().equals(currentUserEmail) || isUserAdmin(principal)) {
+            adService.deleteAd(id);
+        } else {
+            throw new RuntimeException("Nemaš dozvolu za brisanje!");
+        }
+    }
+
+    @PutMapping("/{id}/make-premium")
+    public Ad makePremium(@PathVariable Long id, Principal principal) {
+        // Ovde dopuštamo samo adminu da nekoga proglasi premiumom
+        if (!isUserAdmin(principal)) {
+            throw new RuntimeException("Samo admin može da dodeli premium status!");
+        }
+        return adService.setAdPremium(id);
+    }
+
+    @GetMapping("/user/{userId}")
+    public List<Ad> getAdsByUser(@PathVariable Long userId) {
+        return adService.getAdsByUserId(userId);
+    }
+
+    @PostMapping("/{id}/view")
+    public Ad trackView(@PathVariable Long id, @RequestParam Long userId) {
+        return adService.incrementViews(id, userId);
+    }
+
+    // POMOĆNA METODA: Proverava uloge iz tokena
+    private boolean isUserAdmin(Principal principal) {
+        if (!(principal instanceof UsernamePasswordAuthenticationToken)) return false;
+        UsernamePasswordAuthenticationToken auth = (UsernamePasswordAuthenticationToken) principal;
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 }
