@@ -2,6 +2,7 @@ package com.sandzaksell.sandzaksell.models;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,7 +28,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @JsonIgnore // OVO JE KLJUČNO - Lozinka nikada ne napušta backend
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
 
