@@ -4,7 +4,6 @@ import com.sandzaksell.sandzaksell.services.JWTService;
 import com.sandzaksell.sandzaksell.services.MyUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,44 +24,35 @@ public class JwtFilter extends OncePerRequestFilter {
     private JWTService jwtService;
 
     @Autowired
-    private ApplicationContext context;
+    ApplicationContext context;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setHeader("Access-Control-Allow-Origin", "https://sandzak-sell-marketplace.vercel.app");
+            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Origin, Accept");
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
 
+        String authHeader = request.getHeader("Authorization");
         String token = null;
         String username = null;
 
-        // 1. POKUŠAJ DA NAĐEŠ TOKEN U KUKIJU
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("token".equals(cookie.getName())) { // Ime mora biti isto kao u UserController-u
-                    token = cookie.getValue();
-                    break;
-                }
-            }
-        }
-
-        // 2. AKO NEMA U KUKIJU, POGLEDAJ HEADER (zbog stare verzije frontenda/testiranja)
-        if (token == null) {
-            String authHeader = request.getHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7);
-            }
-        }
-
-        // 3. IZVLAČENJE USERNAME-A AKO TOKEN POSTOJI
-        if (token != null) {
+        // 1. Provera Header-a
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
             try {
                 username = jwtService.extractUserName(token);
             } catch (Exception e) {
-                // Ako je token nevažeći, samo nastavi - Security će ga blokirati kasnije
                 System.out.println("Greška pri čitanju tokena: " + e.getMessage());
             }
         }
 
-        // 4. AUTENTIFIKACIJA
+        // 2. Autentifikacija ako korisnik nije već ulogovan u ovoj sesiji
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = context.getBean(MyUserDetailsService.class).loadUserByUsername(username);
 
@@ -72,12 +62,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // Postavljamo korisnika u SecurityContext
+                // KLJUČNA LINIJA: Ovde "otključavamo" vrata za Spring Security
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
 
-        // 5. PUSTI ZAHTEV DALJE
+        // 3. Pusti zahtev dalje ka kontroleru
         filterChain.doFilter(request, response);
     }
 }
