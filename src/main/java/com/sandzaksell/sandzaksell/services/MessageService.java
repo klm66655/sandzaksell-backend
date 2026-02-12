@@ -6,6 +6,7 @@ import com.sandzaksell.sandzaksell.repositories.MessageRepository;
 import com.sandzaksell.sandzaksell.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -21,13 +22,22 @@ public class MessageService {
 
     @Transactional
     public Message sendMessage(Message message) {
+        // Provjeravamo pošiljaoca (već postavljen u kontroleru)
         User sender = userRepository.findById(message.getSender().getId())
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
+
+        // Provjeravamo primaoca
         User receiver = userRepository.findById(message.getReceiver().getId())
                 .orElseThrow(() -> new RuntimeException("Receiver not found"));
 
         message.setSender(sender);
         message.setReceiver(receiver);
+
+        // DODATO: Automatski postavljamo vrijeme slanja ako već nije postavljeno
+        if (message.getTimestamp() == null) {
+            message.setTimestamp(LocalDateTime.now());
+        }
+
         return messageRepository.save(message);
     }
 

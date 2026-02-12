@@ -8,7 +8,6 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import lombok.NoArgsConstructor;
 
-
 @Entity
 @Table(name = "users")
 @Data
@@ -19,6 +18,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore // Haker ne mora da zna tvoj interni Google ID
     private String googleId;
 
     @Column(unique = true, nullable = false)
@@ -27,26 +27,30 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @JsonIgnore // OVO JE KLJUČNO - Lozinka nikada ne napušta backend
     @Column(nullable = false)
     private String password;
 
     private String role = "ROLE_USER";
 
+    @JsonIgnore // Miralem je ovo video, sada je sakriveno od javnih API poziva
     @Column(name = "token_balance")
     private Integer tokenBalance = 0;
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    // NOVI DEO ZA RESET LOZINKE
+    // NOVI DEO ZA RESET LOZINKE - OBAVEZNO IGNORE
+    @JsonIgnore // Da ne bi mogao da "presretne" kod za reset u JSON-u
     @Column(name = "reset_code")
     private String resetCode;
 
+    @JsonIgnore // Ovo je interna informacija
     @Column(name = "reset_code_expires_at")
     private LocalDateTime resetCodeExpiresAt;
 
     @Column(name = "enabled")
-    private Boolean enabled = true; // Korisnik je aktivan po defaultu
+    private Boolean enabled = true;
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
@@ -54,13 +58,12 @@ public class User {
 
     @JsonIgnore
     @OneToMany(mappedBy = "reviewedUser", cascade = CascadeType.ALL)
-    private List<Review> reviewsReceived; // Recenzije koje su drugi ostavili ovom korisniku
+    private List<Review> reviewsReceived;
 
     @JsonIgnore
     @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL)
-    private List<Review> reviewsGiven; // Recenzije koje je ovaj korisnik ostavio drugima
+    private List<Review> reviewsGiven;
 
-    // Pomoćna metoda za računanje prosečne ocene
     public Double getAverageRating() {
         if (reviewsReceived == null || reviewsReceived.isEmpty()) return 0.0;
         return reviewsReceived.stream()

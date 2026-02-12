@@ -34,9 +34,11 @@ public class Ad {
     private Double price;
     private String location;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY) // Korisnik ne može sam sebi da uključi premium kroz JSON
     @Column(name = "is_premium")
     private Boolean isPremium = false;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY) // Vreme kreiranja postavlja isključivo server
     @Column(name = "created_at", updatable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
@@ -48,6 +50,8 @@ public class Ad {
         }
     }
 
+    // OVO JE KLJUČNO ZA SIGURNOST:
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
@@ -59,12 +63,12 @@ public class Ad {
     @OneToMany(mappedBy = "ad", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Image> images = new ArrayList<>();
 
-    // OVO JE DODATO: Rešava ERROR: update or delete on table "ads" violates foreign key constraint
     @JsonIgnore
     @OneToMany(mappedBy = "ad", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Report> reports = new ArrayList<>();
 
-    private Integer views = 0; // Osnovni brojač
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY) // Niko ne može da pošalje lažan broj pregleda
+    private Integer views = 0;
 
     private Boolean isUsed = false;
 
@@ -74,7 +78,7 @@ public class Ad {
             joinColumns = @JoinColumn(name = "ad_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    @JsonIgnore // Ne želimo da šaljemo čitavu listu korisnika u JSON-u, samo broj
+    @JsonIgnore
     private java.util.Set<User> viewedByUsers = new java.util.HashSet<>();
 
     @JsonProperty("imageUrls")
