@@ -11,7 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tokens")
-@RequiredArgsConstructor // Koristi ovo da ne pišeš konstruktor ručno
+@RequiredArgsConstructor
 public class TransactionController {
 
     private final TransactionService transactionService;
@@ -22,34 +22,34 @@ public class TransactionController {
         try {
             if (principal == null) return ResponseEntity.status(401).body("Niste ulogovani");
 
-            // 1. Identitet uzimamo iz TOKENA, ne iz JSON-a
             User user = userRepository.findByUsername(principal.getName())
                     .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
 
-            // 2. Podaci iz Paypala
-            Integer amount = (Integer) payload.get("amount");
             String transactionId = (String) payload.get("transactionId");
 
-            // ZAŠTITA: Provjeri da li je neko već iskoristio ovaj isti PayPal ID
-            // (Moraš dodati metodu existsByPaypalOrderId u TransactionRepository)
+            // 1. ZAŠTITA: Odmah proveravamo da li je ID već korišćen
             if (transactionService.isTransactionProcessed(transactionId)) {
-                return ResponseEntity.badRequest().body("Ova transakcija je već obrađena!");
+                return ResponseEntity.badRequest().body("Ova transakcija je već iskorišćena!");
             }
 
-            if (amount == null || amount <= 0) {
-                return ResponseEntity.badRequest().body("Nevalidan iznos");
-            }
+            // 2. ZAŠTITA: Ignorišemo 'amount' sa frontenda!
+            // Mi na backendu kažemo: "Ovaj proces dopune uvek vredi 100 tokena za 3 EUR"
+            // Ako želiš više paketa, koristi switch-case na osnovu cene sa Paypala.
+            int fixedAmount = 100;
+
+            // 3. (OPCIONO) Ovde bi išao poziv ka PayPal API-ju da se proveri transactionId
+            // Za sada, bar smo osigurali da niko ne može da upiše "milion" tokena.
 
             Transaction transaction = new Transaction();
             transaction.setUser(user);
-            transaction.setAmount(amount);
+            transaction.setAmount(fixedAmount);
             transaction.setPaypalOrderId(transactionId);
 
             Transaction saved = transactionService.createTransaction(transaction);
 
             return ResponseEntity.ok(saved.getUser());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Greška: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Greška na serveru: " + e.getMessage());
         }
     }
 }
