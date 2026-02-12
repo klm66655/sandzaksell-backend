@@ -5,6 +5,7 @@ import com.sandzaksell.sandzaksell.models.User;
 import com.sandzaksell.sandzaksell.services.AdService;
 import com.sandzaksell.sandzaksell.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import java.security.Principal;
@@ -34,25 +35,22 @@ public class AdController {
     public Ad create(@RequestBody Ad ad, Principal principal) {
         if (principal == null) throw new RuntimeException("Niste ulogovani!");
 
-        // 1. principal.getName() u tvom sistemu je USERNAME
-        String username = principal.getName();
-
-        // 2. Tražimo preko findByUsername (isto kao što radiš u ReviewController-u)
-        User realUser = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Korisnik sa username-om " + username + " nije nađen"));
+        // Uzimamo usera preko username-a iz tokena
+        User realUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
         ad.setUser(realUser);
         ad.setIsPremium(false);
-
         return adService.saveAd(ad);
     }
 
     @PutMapping("/{id}")
     public Ad updateAd(@PathVariable Long id, @RequestBody Ad adDetails, Principal principal) {
-        Ad existingAd = adService.getAdById(id);
-        String currentUsername = principal.getName(); // Username iz tokena
+        if (principal == null) throw new RuntimeException("Niste ulogovani!");
 
-        // POPRAVKA: Poredimo username sa username-om, a ne emailom!
+        Ad existingAd = adService.getAdById(id);
+        String currentUsername = principal.getName();
+
         if (!existingAd.getUser().getUsername().equals(currentUsername) && !isUserAdmin(principal)) {
             throw new RuntimeException("Nemaš dozvolu da menjaš ovaj oglas!");
         }
@@ -67,23 +65,20 @@ public class AdController {
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id, Principal principal) {
-        Ad existingAd = adService.getAdById(id);
-        String currentUsername = principal.getName();
+        if (principal == null) throw new RuntimeException("Niste ulogovani!");
 
-        // POPRAVKA: Ovde isto poredimo username!
-        if (existingAd.getUser().getUsername().equals(currentUsername) || isUserAdmin(principal)) {
+        Ad existingAd = adService.getAdById(id);
+        if (existingAd.getUser().getUsername().equals(principal.getName()) || isUserAdmin(principal)) {
             adService.deleteAd(id);
         } else {
             throw new RuntimeException("Nemaš dozvolu za brisanje!");
         }
     }
 
+    // POPRAVLJENO: @PreAuthorize zahteva @EnableMethodSecurity u SecurityConfig-u
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/make-premium")
-    public Ad makePremium(@PathVariable Long id, Principal principal) {
-        // Ovde dopuštamo samo adminu da nekoga proglasi premiumom
-        if (!isUserAdmin(principal)) {
-            throw new RuntimeException("Samo admin može da dodeli premium status!");
-        }
+    public Ad makePremium(@PathVariable Long id) {
         return adService.setAdPremium(id);
     }
 
@@ -92,12 +87,20 @@ public class AdController {
         return adService.getAdsByUserId(userId);
     }
 
+    // POPRAVLJENO: Sada šalje ispravne parametre servisu
     @PostMapping("/{id}/view")
-    public Ad trackView(@PathVariable Long id, @RequestParam Long userId) {
-        return adService.incrementViews(id, userId);
+    public Ad trackView(@PathVariable Long id, Principal principal) {
+        Long authenticatedUserId = null;
+
+        if (principal != null) {
+            User user = userRepository.findByUsername(principal.getName()).orElse(null);
+            if (user != null) {
+                authenticatedUserId = user.getId();
+            }
+        }
+        return adService.incrementViews(id, authenticatedUserId);
     }
 
-    // POMOĆNA METODA: Proverava uloge iz tokena
     private boolean isUserAdmin(Principal principal) {
         if (!(principal instanceof UsernamePasswordAuthenticationToken)) return false;
         UsernamePasswordAuthenticationToken auth = (UsernamePasswordAuthenticationToken) principal;

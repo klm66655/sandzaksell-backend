@@ -5,6 +5,7 @@ import com.sandzaksell.sandzaksell.models.User;
 import com.sandzaksell.sandzaksell.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +110,7 @@ public class UserController {
 
     // ADMIN SAMO (Ovo bi trebalo zaštititi sa @PreAuthorize("hasRole('ADMIN')"))
     @PutMapping("/{id}/add-tokens")
+    @PreAuthorize("hasRole('ADMIN')")
     public User addTokens(@PathVariable Long id, @RequestParam Integer amount) {
         return userService.updateTokens(id, amount);
     }

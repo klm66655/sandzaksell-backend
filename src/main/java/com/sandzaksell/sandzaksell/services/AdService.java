@@ -15,42 +15,48 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdService {
     private final AdRepository adRepository;
-    private final UserRepository userRepository; // Dodajemo repozitorijum korisnika
+    private final UserRepository userRepository;
 
-    public List<Ad> getAllAds() { return adRepository.findAll(); }
+    public List<Ad> getAllAds() {
+        return adRepository.findAll();
+    }
 
     public Ad getAdById(Long id) {
-        return adRepository.findById(id).orElseThrow(() -> new RuntimeException("Oglas nije nađen"));
+        return adRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Oglas sa ID " + id + " nije nađen"));
     }
 
     @Transactional
     public Ad saveAd(Ad ad) {
-        // 1. VIŠE NE VERUJEMO ID-u iz ad.getUser().getId() jer se može lažirati!
-        // Uzimamo korisnika koji je već setovan u kontroleru preko Principal-a
-        User user = userRepository.findByUsername(ad.getUser().getUsername())
-                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+        // 1. Sigurnost: Koristimo user objekat koji nam je Controller već spremio
+        User user = ad.getUser();
+        if (user == null) {
+            throw new RuntimeException("Sistemska greška: Korisnik oglasa nije setovan!");
+        }
 
+        // 2. Ako je novi oglas, postavi vreme i inicijalizuj preglede
         if (ad.getId() == null) {
             ad.setCreatedAt(LocalDateTime.now());
+            ad.setViews(0);
         }
 
-        // 2. Provera slika (dodajemo null check da ne pukne)
+        // 3. Sigurna naplata za slike (Preko 5 slika košta 50 tokena)
         int numberOfImages = (ad.getImages() != null) ? ad.getImages().size() : 0;
-
-        // 3. Sigurna naplata - skidamo tokene SAMO onome ko je vlasnik oglasa
         if (numberOfImages > 5) {
-            if (user.getTokenBalance() < 50) {
-                throw new RuntimeException("Nemate dovoljno tokena za više od 5 slika!");
+            int tokenPrice = 50;
+            if (user.getTokenBalance() < tokenPrice) {
+                throw new RuntimeException("Nedovoljno tokena! Imate " + user.getTokenBalance() + ", a treba vam " + tokenPrice + " za više od 5 slika.");
             }
-            user.setTokenBalance(user.getTokenBalance() - 50);
-            userRepository.save(user);
+            user.setTokenBalance(user.getTokenBalance() - tokenPrice);
+            userRepository.save(user); // Čuvamo novo stanje tokena
         }
 
-        // Setujemo osvežen user objekat nazad u oglas pre čuvanja
-        ad.setUser(user);
         return adRepository.save(ad);
     }
-    public void deleteAd(Long id) { adRepository.deleteById(id); }
+
+    public void deleteAd(Long id) {
+        adRepository.deleteById(id);
+    }
 
     public List<Ad> getAdsByUserId(Long userId) {
         return adRepository.findByUserId(userId);
@@ -60,26 +66,29 @@ public class AdService {
         return adRepository.findByLocationIgnoreCase(location);
     }
 
-    // Dodaj ovo u AdService.java
-
     @Transactional
     public Ad incrementViews(Long adId, Long userId) {
-        Ad ad = adRepository.findById(adId)
-                .orElseThrow(() -> new RuntimeException("Oglas nije nađen"));
+        Ad ad = getAdById(adId);
 
-        // Ako korisnik nije ulogovan (userId je null), samo uvećaj ukupan broj pregleda
+        // Ako je userId null, posetilac je anoniman
         if (userId == null) {
             ad.setViews((ad.getViews() == null ? 0 : ad.getViews()) + 1);
             return adRepository.save(ad);
         }
 
-        // Ako je ulogovan, proveri da li je već gledao oglas (unique views)
+        // Ako je korisnik ulogovan, proveri da li je već gledao (Unique Views)
         User user = userRepository.findById(userId).orElse(null);
 
-        if (user != null && !ad.getViewedByUsers().contains(user)) {
-            ad.getViewedByUsers().add(user);
-            ad.setViews((ad.getViews() == null ? 0 : ad.getViews()) + 1);
-            return adRepository.save(ad);
+        if (user != null) {
+            // Provera da li je user već u listi onih koji su videli oglas
+            boolean alreadyViewed = ad.getViewedByUsers().stream()
+                    .anyMatch(u -> u.getId().equals(userId));
+
+            if (!alreadyViewed) {
+                ad.getViewedByUsers().add(user);
+                ad.setViews((ad.getViews() == null ? 0 : ad.getViews()) + 1);
+                return adRepository.save(ad);
+            }
         }
 
         return ad;
@@ -87,21 +96,20 @@ public class AdService {
 
     @Transactional
     public Ad setAdPremium(Long id) {
-        Ad ad = adRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Oglas nije nađen"));
+        Ad ad = getAdById(id);
 
-        if (ad.getIsPremium()) {
+        if (Boolean.TRUE.equals(ad.getIsPremium())) {
             throw new RuntimeException("Oglas je već premium!");
         }
 
-        User user = ad.getUser(); // Uzimamo vlasnika oglasa
+        User user = ad.getUser();
         int cenaPremiuma = 100;
 
         if (user.getTokenBalance() < cenaPremiuma) {
-            throw new RuntimeException("Nemate dovoljno tokena za Premium (potrebno 100 ST)!");
+            throw new RuntimeException("Korisnik nema dovoljno tokena (potrebno 100 ST)!");
         }
 
-        // Skini tokene i snimi
+        // Skidanje tokena
         user.setTokenBalance(user.getTokenBalance() - cenaPremiuma);
         userRepository.save(user);
 
