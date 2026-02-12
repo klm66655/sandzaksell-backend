@@ -24,11 +24,13 @@ public class MessageController {
 
     @PostMapping("/send")
     public Message send(@RequestBody Message message, Principal principal) {
-        // SIGURNOST: Uzimamo identitet direktno iz JWT tokena
-        User currentUser = userRepository.findByEmail(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (principal == null) throw new RuntimeException("Niste ulogovani!");
 
-        // SIGURNOST: Pregazimo bilo šta što je klijent poslao kao sender ID
+        // POPRAVKA: Koristimo findByUsername umesto findByEmail
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+
+        // Postavljamo pošiljaoca iz tokena (sigurnost)
         message.setSender(currentUser);
 
         return messageService.sendMessage(message);

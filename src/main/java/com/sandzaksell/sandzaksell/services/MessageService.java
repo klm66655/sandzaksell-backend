@@ -22,18 +22,16 @@ public class MessageService {
 
     @Transactional
     public Message sendMessage(Message message) {
-        // Provjeravamo pošiljaoca (već postavljen u kontroleru)
-        User sender = userRepository.findById(message.getSender().getId())
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
+        // Pošiljalac je već postavljen u kontroleru i on je "realan" iz baze
+        User sender = message.getSender();
 
-        // Provjeravamo primaoca
+        // Primaoca moramo proveriti jer nam sa frontenda stiže samo njegov ID
         User receiver = userRepository.findById(message.getReceiver().getId())
-                .orElseThrow(() -> new RuntimeException("Receiver not found"));
+                .orElseThrow(() -> new RuntimeException("Primalac nije nađen"));
 
         message.setSender(sender);
         message.setReceiver(receiver);
 
-        // DODATO: Automatski postavljamo vrijeme slanja ako već nije postavljeno
         if (message.getTimestamp() == null) {
             message.setTimestamp(LocalDateTime.now());
         }
