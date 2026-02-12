@@ -76,6 +76,8 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.PUT, "/api/ads/*/make-premium").authenticated()
 
+                        .requestMatchers("/api/messages/**").authenticated()
+
                         // 4. Admin rute
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
