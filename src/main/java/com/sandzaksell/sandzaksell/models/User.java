@@ -34,7 +34,7 @@ public class User {
 
     private String role = "ROLE_USER";
 
-    @JsonIgnore // Miralem je ovo video, sada je sakriveno od javnih API poziva
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY) // Može da se čita (vidi na sajtu), ali ne može da se "podmetne" u requestu
     @Column(name = "token_balance")
     private Integer tokenBalance = 0;
 
