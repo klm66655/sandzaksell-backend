@@ -44,6 +44,8 @@ public class SecurityConfig {
                         // 1. OPTIONS mora biti prvi zbog CORS-a
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                        .requestMatchers("/ws/**").permitAll()
+
                         // 2. Eksplicitno dozvoli login i register
                         .requestMatchers("/api/users/login").permitAll()
                         .requestMatchers("/api/users/register").permitAll()
