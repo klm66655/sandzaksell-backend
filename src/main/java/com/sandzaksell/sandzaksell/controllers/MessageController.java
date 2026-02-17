@@ -49,14 +49,15 @@ public class MessageController {
         // 4. TEK SAD šalješ notifikaciju preko WebSocketa
         // Koristimo ID primaoca kao destinaciju
         try {
-            messagingTemplate.convertAndSendToUser(
-                    savedMessage.getReceiver().getId().toString(),
-                    "/queue/notifications",
-                    savedMessage // Frontend će primiti ceo JSON poruke
+            // Ručno pravimo putanju: /topic/notifications/ID_PRIMAOCA
+            String destination = "/topic/notifications/" + savedMessage.getReceiver().getId();
+
+            messagingTemplate.convertAndSend(
+                    destination,
+                    savedMessage
             );
-            System.out.println("Notifikacija poslata korisniku: " + savedMessage.getReceiver().getId());
+            System.out.println("Notifikacija poslata na kanal: " + destination);
         } catch (Exception e) {
-            // Loguj grešku ali nemoj blokirati HTTP odgovor ako socket pukne
             System.err.println("Greška pri slanju WebSocket notifikacije: " + e.getMessage());
         }
 
