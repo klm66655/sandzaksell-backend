@@ -65,6 +65,11 @@ public class User {
     @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL)
     private List<Review> reviewsGiven;
 
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Column(name = "phone")
+    private String phone;
+
     public Double getAverageRating() {
         if (reviewsReceived == null || reviewsReceived.isEmpty()) return 0.0;
         return reviewsReceived.stream()
