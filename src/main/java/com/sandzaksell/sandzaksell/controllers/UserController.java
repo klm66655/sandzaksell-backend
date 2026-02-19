@@ -3,15 +3,16 @@ package com.sandzaksell.sandzaksell.controllers;
 import com.sandzaksell.sandzaksell.dto.LoginResponse;
 import com.sandzaksell.sandzaksell.models.User;
 import com.sandzaksell.sandzaksell.services.UserService;
+import com.sandzaksell.sandzaksell.services.EmailService;
+import jakarta.validation.Valid; // OBAVEZNO DODAJ
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+
+import java.security.Principal;
 import java.util.Map;
-import com.sandzaksell.sandzaksell.services.EmailService;
 import java.util.Random;
-import java.security.Principal; // OBAVEZNO DODAJ
 
 @RestController
 @RequestMapping("/api/users")
@@ -22,7 +23,6 @@ public class UserController {
     private final UserService userService;
     private final EmailService emailService;
 
-    // --- LOGIN I REGISTER OSTAJU ISTI ---
     @PostMapping("/login")
     public LoginResponse login(@RequestBody User user) {
         String token = userService.verify(user);
@@ -30,33 +30,31 @@ public class UserController {
         return new LoginResponse(token, foundUser.getId(), foundUser.getUsername(), foundUser.getRole());
     }
 
+    // --- SADA KORISTI @Valid IZ MODELA ---
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        // OSNOVNA VALIDACIJA (Miralemova tačka 2)
-        if (user.getEmail() == null || !user.getEmail().contains("@")) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Neispravan email format!"));
-        }
-        if (user.getPassword() == null || user.getPassword().length() < 6) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Lozinka mora imati bar 6 karaktera!"));
-        }
+    public ResponseEntity<?> register(@Valid @RequestBody User user) {
+        // Više ti ne trebaju ručni "if" uslovi ovde!
+        // @Valid će automatski proveriti email format i dužinu lozinke
+        // na osnovu onoga što smo upisali u User.java klasu.
         return ResponseEntity.ok(userService.registerUser(user));
     }
 
-    // --- OVDJE JE BILA RUPA - SADA JE ZAKLJUČANO ---
     @PutMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request, Principal principal) {
-        // principal.getName() ti vraća USERNAME, zato koristi getUserByUsername!
         User currentUser = userService.getUserByUsername(principal.getName());
         String newPassword = request.get("newPassword");
+
+        // Ovde možeš dodati proveru za dužinu nove lozinke ako želiš
+        if (newPassword == null || newPassword.length() < 8) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Nova lozinka mora imati bar 8 karaktera!"));
+        }
 
         userService.updatePassword(currentUser.getId(), newPassword);
         return ResponseEntity.ok(Map.of("message", "Lozinka uspešno promenjena"));
     }
 
-    // 2. IZMENA ZA SLIKU
     @PutMapping("/update-image")
     public ResponseEntity<?> updateProfileImage(@RequestBody Map<String, String> request, Principal principal) {
-        // Isto i ovde - traži po USERNAME
         User currentUser = userService.getUserByUsername(principal.getName());
         String imageUrl = request.get("profileImageUrl");
 
@@ -65,7 +63,6 @@ public class UserController {
         return ResponseEntity.ok(currentUser);
     }
 
-    // --- GOOGLE LOGIN I FORGOT PASSWORD OSTAJU SLIČNI ---
     @PostMapping("/google-login")
     public LoginResponse googleLogin(@RequestBody Map<String, String> payload) {
         String email = payload.get("email");
@@ -108,7 +105,6 @@ public class UserController {
         return userService.getUserById(id);
     }
 
-    // ADMIN SAMO (Ovo bi trebalo zaštititi sa @PreAuthorize("hasRole('ADMIN')"))
     @PutMapping("/{id}/add-tokens")
     @PreAuthorize("hasRole('ADMIN')")
     public User addTokens(@PathVariable Long id, @RequestParam Integer amount) {

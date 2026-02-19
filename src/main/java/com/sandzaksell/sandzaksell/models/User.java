@@ -1,9 +1,10 @@
 package com.sandzaksell.sandzaksell.models;
-import java.util.List;
 
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*; // DODATO: Paket za validaciju
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -19,34 +20,40 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonIgnore // Haker ne mora da zna tvoj interni Google ID
+    @JsonIgnore
     private String googleId;
 
+    @NotBlank(message = "Username ne sme biti prazan")
+    @Size(min = 3, max = 20, message = "Username mora imati između 3 i 20 karaktera")
     @Column(unique = true, nullable = false)
     private String username;
 
+    @NotBlank(message = "Email je obavezan")
+    @Email(message = "Format email adrese nije validan") // Proverava @ i domen
     @Column(unique = true, nullable = false)
     private String email;
 
+    @NotBlank(message = "Lozinka je obavezna")
+    @Size(min = 8, message = "Lozinka mora imati najmanje 8 karaktera")
+    // Opciono: Dodaj @Pattern ako želiš da forsiraš broj ili veliko slovo
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
 
     private String role = "ROLE_USER";
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY) // Može da se čita (vidi na sajtu), ali ne može da se "podmetne" u requestu
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "token_balance")
     private Integer tokenBalance = 0;
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    // NOVI DEO ZA RESET LOZINKE - OBAVEZNO IGNORE
-    @JsonIgnore // Da ne bi mogao da "presretne" kod za reset u JSON-u
+    @JsonIgnore
     @Column(name = "reset_code")
     private String resetCode;
 
-    @JsonIgnore // Ovo je interna informacija
+    @JsonIgnore
     @Column(name = "reset_code_expires_at")
     private LocalDateTime resetCodeExpiresAt;
 
@@ -65,8 +72,6 @@ public class User {
     @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL)
     private List<Review> reviewsGiven;
 
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "phone")
     private String phone;
 
