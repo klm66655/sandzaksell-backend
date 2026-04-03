@@ -95,28 +95,30 @@ public class UserService {
 
     public User processGoogleUser(String email, String name, String googleId, String profileImage) {
         return userRepository.findByEmail(email).map(user -> {
-            // Ako korisnik postoji, a nema googleId, dodajemo ga
+
+            // 1. PROVERA: Ako je korisnik nađen u bazi, odmah proveri da li je banovan
+            if (user.getEnabled() != null && !user.getEnabled()) {
+                // Bacamo grešku - ovo će zaustaviti proces logovanja
+                throw new RuntimeException("VAŠ NALOG JE BANOVAN! Pristup preko Google-a je onemogućen.");
+            }
+
+            // Ako nije banovan, nastavi sa ažuriranjem Google ID-a ako treba
             if (user.getGoogleId() == null) {
                 user.setGoogleId(googleId);
                 return userRepository.save(user);
             }
             return user;
         }).orElseGet(() -> {
-            // Registracija novog korisnika
+            // Registracija novog korisnika (ovde su novi, pa su po defaultu enabled=true)
             User newUser = new User();
-            newUser.setEmail(email); // Polje iz tvog modela
-
-            // Za username stavljamo ime sa Google-a, a ako ga nema uzimamo deo mejla
+            newUser.setEmail(email);
             String suggestedUsername = (name != null && !name.isEmpty()) ? name : email.split("@")[0];
             newUser.setUsername(suggestedUsername);
-
-            newUser.setGoogleId(googleId); // Polje iz tvog modela
-            newUser.setProfileImageUrl(profileImage); // Polje iz tvog modela
-            newUser.setRole("ROLE_USER"); // Pratimo tvoj default iz modela
-            newUser.setTokenBalance(0); // Polje iz tvog modela
-            newUser.setEnabled(true); //
-
-            // Lozinka mora biti tu jer je nullable=false u tvom modelu
+            newUser.setGoogleId(googleId);
+            newUser.setProfileImageUrl(profileImage);
+            newUser.setRole("ROLE_USER");
+            newUser.setTokenBalance(0);
+            newUser.setEnabled(true);
             newUser.setPassword(new BCryptPasswordEncoder().encode(java.util.UUID.randomUUID().toString()));
 
             return userRepository.save(newUser);
