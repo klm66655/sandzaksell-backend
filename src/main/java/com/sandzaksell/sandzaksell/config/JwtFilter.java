@@ -56,6 +56,15 @@ public class JwtFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = context.getBean(MyUserDetailsService.class).loadUserByUsername(username);
 
+            if (!userDetails.isEnabled()) {
+                // Ako je korisnik banovan u bazi, vraćamo 403 i PREKIDAMO zahtev odmah
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write("{\"message\": \"Vaš nalog je banovan. Pristup onemogućen!\"}");
+                return; // Ovde filter staje, zahtev nikad ne stiže do kontrolera
+            }
+
             if (jwtService.validateToken(token, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
