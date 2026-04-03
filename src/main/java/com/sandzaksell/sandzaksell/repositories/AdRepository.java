@@ -2,6 +2,8 @@ package com.sandzaksell.sandzaksell.repositories;
 
 import com.sandzaksell.sandzaksell.models.Ad;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AdRepository extends JpaRepository<Ad, Long> {
@@ -9,4 +11,5 @@ public interface AdRepository extends JpaRepository<Ad, Long> {
     List<Ad> findByLocationIgnoreCase(String location);
     List<Ad> findByCategoryId(Long categoryId);
     List<Ad> findByUserId(Long userId);
+    List<Ad> findAllByIsPremiumTrueAndPremiumUntilBefore(LocalDateTime now);
 }

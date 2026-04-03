@@ -97,23 +97,31 @@ public class AdService {
     @Transactional
     public Ad setAdPremium(Long id) {
         Ad ad = getAdById(id);
-
-        if (Boolean.TRUE.equals(ad.getIsPremium())) {
-            throw new RuntimeException("Oglas je već premium!");
-        }
-
         User user = ad.getUser();
-        int cenaPremiuma = 100;
 
-        if (user.getTokenBalance() < cenaPremiuma) {
-            throw new RuntimeException("Korisnik nema dovoljno tokena (potrebno 100 ST)!");
+        // SIGURNOST 1: Provera da li je već premium (da mu ne skine pare dva puta)
+        if (Boolean.TRUE.equals(ad.getIsPremium())) {
+            throw new RuntimeException("Oglas je već u statusu HITNA PRODAJA!");
         }
 
-        // Skidanje tokena
+        // SIGURNOST 2: Provera da li je korisnik banovan pre nego što mu uzmemo pare
+        if (Boolean.FALSE.equals(user.getEnabled())) {
+            throw new RuntimeException("Ne možete kupiti premium jer je vaš nalog suspendovan.");
+        }
+
+        int cenaPremiuma = 100;
+        if (user.getTokenBalance() < cenaPremiuma) {
+            throw new RuntimeException("Nedovoljno tokena (potrebno 100 ST)!");
+        }
+
+        // 1. Skidanje tokena
         user.setTokenBalance(user.getTokenBalance() - cenaPremiuma);
         userRepository.save(user);
 
+        // 2. Postavljanje statusa i DATUMA ISTEKA (2 dana = 48 sati)
         ad.setIsPremium(true);
+        ad.setPremiumUntil(LocalDateTime.now().plusDays(1));
+
         return adRepository.save(ad);
     }
 }

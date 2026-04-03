@@ -38,6 +38,11 @@ public class Ad {
     @Column(name = "is_premium")
     private Boolean isPremium = false;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Column(name = "premium_until")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime premiumUntil;
+
     @JsonProperty(access = JsonProperty.Access.READ_ONLY) // Vreme kreiranja postavlja isključivo server
     @Column(name = "created_at", updatable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
