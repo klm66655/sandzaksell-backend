@@ -17,8 +17,9 @@ public class AdService {
     private final AdRepository adRepository;
     private final UserRepository userRepository;
 
+    // 1. POPRAVLJENO: Vuče samo oglase korisnika koji NISU banovani
     public List<Ad> getAllAds() {
-        return adRepository.findAll();
+        return adRepository.findAllByUserEnabledTrue();
     }
 
     public Ad getAdById(Long id) {
@@ -32,6 +33,11 @@ public class AdService {
         User user = ad.getUser();
         if (user == null) {
             throw new RuntimeException("Sistemska greška: Korisnik oglasa nije setovan!");
+        }
+
+        // NOVO: Sigurnosna provera - ako je korisnik banovan, ne daj mu da snimi oglas!
+        if (Boolean.FALSE.equals(user.getEnabled())) {
+            throw new RuntimeException("PRISTUP ODBIJEN: Vaš nalog je banovan i ne možete objavljivati oglase.");
         }
 
         // 2. Ako je novi oglas, postavi vreme i inicijalizuj preglede
@@ -62,25 +68,28 @@ public class AdService {
         return adRepository.findByUserId(userId);
     }
 
+    // 2. POPRAVLJENO: Filtrira banovane korisnike na osnovu lokacije
     public List<Ad> getAdsByLocation(String location) {
-        return adRepository.findByLocationIgnoreCase(location);
+        return adRepository.findByLocationIgnoreCaseAndUserEnabledTrue(location);
+    }
+
+    // Dodatna metoda ako ti treba za kategorije (samo enabled korisnici)
+    public List<Ad> getAdsByCategoryId(Long categoryId) {
+        return adRepository.findByCategoryIdAndUserEnabledTrue(categoryId);
     }
 
     @Transactional
     public Ad incrementViews(Long adId, Long userId) {
         Ad ad = getAdById(adId);
 
-        // Ako je userId null, posetilac je anoniman
         if (userId == null) {
             ad.setViews((ad.getViews() == null ? 0 : ad.getViews()) + 1);
             return adRepository.save(ad);
         }
 
-        // Ako je korisnik ulogovan, proveri da li je već gledao (Unique Views)
         User user = userRepository.findById(userId).orElse(null);
 
         if (user != null) {
-            // Provera da li je user već u listi onih koji su videli oglas
             boolean alreadyViewed = ad.getViewedByUsers().stream()
                     .anyMatch(u -> u.getId().equals(userId));
 
@@ -99,12 +108,10 @@ public class AdService {
         Ad ad = getAdById(id);
         User user = ad.getUser();
 
-        // SIGURNOST 1: Provera da li je već premium (da mu ne skine pare dva puta)
         if (Boolean.TRUE.equals(ad.getIsPremium())) {
             throw new RuntimeException("Oglas je već u statusu HITNA PRODAJA!");
         }
 
-        // SIGURNOST 2: Provera da li je korisnik banovan pre nego što mu uzmemo pare
         if (Boolean.FALSE.equals(user.getEnabled())) {
             throw new RuntimeException("Ne možete kupiti premium jer je vaš nalog suspendovan.");
         }
@@ -114,13 +121,12 @@ public class AdService {
             throw new RuntimeException("Nedovoljno tokena (potrebno 100 ST)!");
         }
 
-        // 1. Skidanje tokena
         user.setTokenBalance(user.getTokenBalance() - cenaPremiuma);
         userRepository.save(user);
 
-        // 2. Postavljanje statusa i DATUMA ISTEKA (2 dana = 48 sati)
         ad.setIsPremium(true);
-        ad.setPremiumUntil(LocalDateTime.now().plusDays(1));
+        // Postavljamo na 2 dana (možeš staviti .plusDays(2))
+        ad.setPremiumUntil(LocalDateTime.now().plusDays(2));
 
         return adRepository.save(ad);
     }
