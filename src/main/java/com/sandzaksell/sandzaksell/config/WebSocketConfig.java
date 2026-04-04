@@ -19,7 +19,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("https://sandzak-sell-marketplace.vercel.app")
+                .setAllowedOrigins("http://localhost:5173",
+                        "http://localhost:8081",
+                        "https://sandzak-sell-marketplace.vercel.app",
+                        "https://sandzaksell-backend-production.up.railway.app")
                 .withSockJS(); // Omogućava fallback ako browser ne podržava čist ws
     }
 }
