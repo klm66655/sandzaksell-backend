@@ -41,61 +41,43 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. OPTIONS mora biti prvi zbog CORS-a
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
                         .requestMatchers("/ws/**").permitAll()
 
-                        // 2. Eksplicitno dozvoli login i register
-                        .requestMatchers("/api/users/login").permitAll()
-                        .requestMatchers("/api/users/register").permitAll()
+                        // JAVNE RUTE (Login, Register, Reset)
+                        .requestMatchers("/api/users/login", "/api/users/register", "/api/users/google-login").permitAll()
+                        .requestMatchers("/api/users/forgot-password", "/api/users/reset-password").permitAll()
 
-                        .requestMatchers("/api/users/google-login").permitAll()
-
-                        .requestMatchers("/api/users/forgot-password").permitAll()
-                        .requestMatchers("/api/users/reset-password").permitAll()
-
-                        .requestMatchers(HttpMethod.POST, "/api/ads/*/view").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/users/change-password").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/users/update-image").authenticated()
-
-                        .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
-
-                        .requestMatchers(HttpMethod.GET, "/api/reviews/user/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/reviews/add").authenticated()
-                        // Dozvoli korisniku da vidi svoje omiljene (GET) i da doda/ukloni (POST)
-
-                        .requestMatchers(HttpMethod.POST, "/api/ads/*/favorite").authenticated()
+                        // --- OVDE JE BITNA PROMENA: SPECIFIČNE RUTE ZA OGLASE KOJE TRAŽE LOGIN ---
+                        // Ove rute MORAJU biti iznad opšteg GET /api/ads/**
                         .requestMatchers(HttpMethod.GET, "/api/ads/favorites").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/ads/*/favorite").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/ads/*/make-premium").authenticated()
 
-
-
-                        .requestMatchers("/api/tokens/add").authenticated()
-
-
-
-                        // 3. Dozvoli GET metode za oglase da bi sajt bio vidljiv i bez logina
+                        // JAVNO GLEDANJE OGLASA (Mora ispod specifičnih authenticated ruta)
+                        .requestMatchers(HttpMethod.POST, "/api/ads/*/view").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
 
+                        // KORISNIČKE RUTE (Authenticated)
+                        .requestMatchers(HttpMethod.PUT, "/api/users/change-password").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/users/update-image").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/add").authenticated()
+                        .requestMatchers("/api/tokens/add").authenticated()
+                        .requestMatchers("/api/messages/**").authenticated()
 
-
-
-
+                        // Ostale akcije nad oglasima (Update/Delete)
                         .requestMatchers(HttpMethod.PUT, "/api/ads/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/ads/**").authenticated()
 
-                        .requestMatchers(HttpMethod.PUT, "/api/ads/*/make-premium").authenticated()
+                        // JAVNI PROFILI I RECENZIJE
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/user/**").permitAll()
 
-                        .requestMatchers("/api/messages/**").authenticated()
-
-                        // 4. Admin rute
+                        // ADMIN RUTE
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/categories/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers("/api/categories/**").hasRole("ADMIN")
 
-                        // 5. Sve ostalo zahteva login
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
