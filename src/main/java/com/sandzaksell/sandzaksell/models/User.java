@@ -1,18 +1,16 @@
 package com.sandzaksell.sandzaksell.models;
 
-import java.util.List;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.*;
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*; // DODATO: Paket za validaciju
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import jakarta.validation.constraints.*;
+import lombok.*;
 import java.time.LocalDateTime;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
-@Data
+@Getter // Umesto @Data
+@Setter // Umesto @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -23,35 +21,23 @@ public class User {
     @JsonIgnore
     private String googleId;
 
-    @NotBlank(message = "Username ne sme biti prazan")
-    @Size(min = 3, max = 20, message = "Username mora imati između 3 i 20 karaktera")
     @Column(unique = true, nullable = false)
     private String username;
 
-    @NotBlank(message = "Email je obavezan")
-    @Email(message = "Format email adrese nije validan") // Proverava @ i domen
     @Column(unique = true, nullable = false)
     private String email;
 
-    @NotBlank(message = "Lozinka je obavezna")
-    @Size(min = 8, message = "Lozinka mora imati najmanje 8 karaktera")
-    // Opciono: Dodaj @Pattern ako želiš da forsiraš broj ili veliko slovo
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
 
     private String role = "ROLE_USER";
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "token_balance")
     private Integer tokenBalance = 0;
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
-
-    @JsonIgnore
-    @Column(name = "reset_code")
-    private String resetCode;
 
     @ManyToMany
     @JoinTable(
@@ -59,19 +45,20 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "ad_id")
     )
-    @JsonIgnore // Ne želimo da nam JSON postane ogroman kad god povučemo korisnika
-    private java.util.Set<Ad> favoriteAds = new java.util.HashSet<>();
-
-    @JsonIgnore
-    @Column(name = "reset_code_expires_at")
-    private LocalDateTime resetCodeExpiresAt;
-
-    @Column(name = "enabled")
-    private Boolean enabled = true;
+    @JsonIgnoreProperties("user") // KLJUČNO: Kad listaš favorite, nemoj unutar svakog oglasa opet učitavati celog usera
+    private Set<Ad> favoriteAds = new HashSet<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Ad> ads;
+
+    @JsonIgnore
+    private String resetCode;
+    @JsonIgnore
+    private LocalDateTime resetCodeExpiresAt;
+
+    private Boolean enabled = true;
+    private String phone;
 
     @JsonIgnore
     @OneToMany(mappedBy = "reviewedUser", cascade = CascadeType.ALL)
@@ -81,14 +68,15 @@ public class User {
     @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL)
     private List<Review> reviewsGiven;
 
-    @Column(name = "phone")
-    private String phone;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User)) return false;
+        return id != null && id.equals(((User) o).getId());
+    }
 
-    public Double getAverageRating() {
-        if (reviewsReceived == null || reviewsReceived.isEmpty()) return 0.0;
-        return reviewsReceived.stream()
-                .mapToInt(Review::getRating)
-                .average()
-                .orElse(0.0);
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

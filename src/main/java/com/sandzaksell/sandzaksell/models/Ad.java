@@ -1,24 +1,16 @@
 package com.sandzaksell.sandzaksell.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.util.List;
-import java.util.ArrayList;
+import lombok.*;
+import com.fasterxml.jackson.annotation.*;
+import java.util.*;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.PrePersist;
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "ads")
-@Data
+@Getter // Umesto @Data
+@Setter // Umesto @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Ad {
@@ -34,32 +26,24 @@ public class Ad {
     private Double price;
     private String location;
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY) // Korisnik ne može sam sebi da uključi premium kroz JSON
     @Column(name = "is_premium")
     private Boolean isPremium = false;
 
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    @Column(name = "premium_until")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime premiumUntil;
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY) // Vreme kreiranja postavlja isključivo server
     @Column(name = "created_at", updatable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
-        }
+        if (this.createdAt == null) this.createdAt = LocalDateTime.now();
     }
 
-    // OVO JE KLJUČNO ZA SIGURNOST:
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"ads", "favoriteAds", "password", "email", "tokenBalance"}) // KLJUČNO: Ne povlači sve o vlasniku ovde
     private User user;
 
     @ManyToOne
@@ -73,9 +57,7 @@ public class Ad {
     @OneToMany(mappedBy = "ad", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Report> reports = new ArrayList<>();
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY) // Niko ne može da pošalje lažan broj pregleda
     private Integer views = 0;
-
     private Boolean isUsed = false;
 
     @ManyToMany
@@ -85,7 +67,7 @@ public class Ad {
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     @JsonIgnore
-    private java.util.Set<User> viewedByUsers = new java.util.HashSet<>();
+    private Set<User> viewedByUsers = new HashSet<>();
 
     @JsonProperty("imageUrls")
     public void setImageUrls(List<String> urls) {
@@ -97,5 +79,18 @@ public class Ad {
                 return img;
             }).collect(Collectors.toList());
         }
+    }
+
+    // Ručno dodajemo hashCode i equals samo preko ID-a da izbegnemo petlju
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Ad)) return false;
+        return id != null && id.equals(((Ad) o).getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
