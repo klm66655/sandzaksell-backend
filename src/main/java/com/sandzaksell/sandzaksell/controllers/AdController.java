@@ -60,8 +60,7 @@ public class AdController {
         existingAd.setPrice(adDetails.getPrice());
         existingAd.setDescription(adDetails.getDescription());
         existingAd.setLocation(adDetails.getLocation());
-        existingAd.setLatitude(adDetails.getLatitude());
-        existingAd.setLongitude(adDetails.getLongitude());
+
 
         return adService.saveAd(existingAd);
     }
@@ -111,11 +110,5 @@ public class AdController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 
-    @GetMapping("/nearby")
-    public ResponseEntity<List<Ad>> getNearbyAds(
-            @RequestParam Double lat,
-            @RequestParam Double lng,
-            @RequestParam Double radius) {
-        return ResponseEntity.ok(adService.getNearbyAds(lat, lng, radius));
-    }
+
 }

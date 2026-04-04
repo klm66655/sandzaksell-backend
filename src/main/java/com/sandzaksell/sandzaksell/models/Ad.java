@@ -38,11 +38,6 @@ public class Ad {
     @Column(name = "is_premium")
     private Boolean isPremium = false;
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Double latitude;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Double longitude;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "premium_until")

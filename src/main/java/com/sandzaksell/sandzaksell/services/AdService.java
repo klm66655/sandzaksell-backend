@@ -131,7 +131,5 @@ public class AdService {
         return adRepository.save(ad);
     }
 
-    public List<Ad> getNearbyAds(Double lat, Double lng, Double radius) {
-        return adRepository.findNearbyAds(lat, lng, radius);
-    }
+
 }
