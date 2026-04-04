@@ -112,7 +112,7 @@ public class AdController {
     }
 
     @Transactional // OBAVEZNO DODAJ OVO
-    @PostMapping("/{id}/favorite")
+    @PostMapping("/favorite/{id}")
     public ResponseEntity<?> toggleFavorite(@PathVariable Long id, Principal principal) {
         if (principal == null) return ResponseEntity.status(401).body("Moraš biti ulogovan!");
 
