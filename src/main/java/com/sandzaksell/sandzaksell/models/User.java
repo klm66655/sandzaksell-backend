@@ -53,6 +53,15 @@ public class User {
     @Column(name = "reset_code")
     private String resetCode;
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_favorites",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "ad_id")
+    )
+    @JsonIgnore // Ne želimo da nam JSON postane ogroman kad god povučemo korisnika
+    private java.util.Set<Ad> favoriteAds = new java.util.HashSet<>();
+
     @JsonIgnore
     @Column(name = "reset_code_expires_at")
     private LocalDateTime resetCodeExpiresAt;

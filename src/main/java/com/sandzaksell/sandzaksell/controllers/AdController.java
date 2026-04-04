@@ -110,5 +110,32 @@ public class AdController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 
+    @PostMapping("/{adId}/favorite")
+    public ResponseEntity<?> toggleFavorite(@PathVariable Long adId, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body("Moraš biti ulogovan!");
+
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+        Ad ad = adService.getAdById(adId);
+
+        if (user.getFavoriteAds().contains(ad)) {
+            user.getFavoriteAds().remove(ad);
+            userRepository.save(user);
+            return ResponseEntity.ok("Uklonjeno iz omiljenih");
+        } else {
+            user.getFavoriteAds().add(ad);
+            userRepository.save(user);
+            return ResponseEntity.ok("Dodato u omiljene");
+        }
+    }
+
+    // Ruta da korisnik vidi SVE svoje omiljene oglase
+    @GetMapping("/favorites")
+    public ResponseEntity<java.util.Set<Ad>> getMyFavorites(Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        User user = userRepository.findByUsername(principal.getName()).get();
+        return ResponseEntity.ok(user.getFavoriteAds());
+    }
+
 
 }
