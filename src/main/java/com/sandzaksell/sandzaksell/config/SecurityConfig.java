@@ -51,10 +51,10 @@ public class SecurityConfig {
                         // --- OVDE JE BITNA PROMENA: SPECIFIČNE RUTE ZA OGLASE KOJE TRAŽE LOGIN ---
                         // Ove rute MORAJU biti iznad opšteg GET /api/ads/**
                         .requestMatchers(HttpMethod.GET, "/api/ads/favorites").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/ads/*/favorite").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/ads/*/make-premium").authenticated()
 
+                        .requestMatchers(HttpMethod.PUT, "/api/ads/*/make-premium").authenticated()
                         // JAVNO GLEDANJE OGLASA (Mora ispod specifičnih authenticated ruta)
+                        .requestMatchers(HttpMethod.POST, "/api/ads/*/favorite").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/ads/*/view").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
