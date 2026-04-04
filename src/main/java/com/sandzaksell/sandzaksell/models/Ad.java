@@ -39,6 +39,12 @@ public class Ad {
     private Boolean isPremium = false;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Double latitude;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Double longitude;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "premium_until")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime premiumUntil;
