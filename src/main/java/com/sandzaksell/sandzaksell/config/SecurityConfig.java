@@ -63,13 +63,16 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/reviews/user/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/reviews/add").authenticated()
+                        // Dozvoli korisniku da vidi svoje omiljene (GET) i da doda/ukloni (POST)
+
+                        .requestMatchers(HttpMethod.POST, "/api/ads/*/favorite").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/ads/favorites").authenticated()
+
 
 
                         .requestMatchers("/api/tokens/add").authenticated()
 
-                        // Dozvoli korisniku da vidi svoje omiljene (GET) i da doda/ukloni (POST)
-                        .requestMatchers(HttpMethod.GET, "/api/ads/favorites").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/ads/**").authenticated()
+
 
                         // 3. Dozvoli GET metode za oglase da bi sajt bio vidljiv i bez logina
                         .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
