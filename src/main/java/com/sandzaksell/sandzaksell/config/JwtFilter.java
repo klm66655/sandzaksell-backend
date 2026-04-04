@@ -24,7 +24,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private JWTService jwtService;
 
     @Autowired
-    ApplicationContext context;
+    private MyUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -54,7 +54,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         // 2. Autentifikacija ako korisnik nije već ulogovan u ovoj sesiji
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = context.getBean(MyUserDetailsService.class).loadUserByUsername(username);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             if (!userDetails.isEnabled()) {
                 // Ako je korisnik banovan u bazi, vraćamo 403 i PREKIDAMO zahtev odmah
