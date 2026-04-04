@@ -112,17 +112,17 @@ public class AdController {
     }
 
     @Transactional // OBAVEZNO DODAJ OVO
-    @PostMapping("/{adId}/favorite")
-    public ResponseEntity<?> toggleFavorite(@PathVariable Long adId, Principal principal) {
+    @PostMapping("/{id}/favorite")
+    public ResponseEntity<?> toggleFavorite(@PathVariable Long id, Principal principal) {
         if (principal == null) return ResponseEntity.status(401).body("Moraš biti ulogovan!");
 
         User user = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
-        Ad ad = adService.getAdById(adId);
+        Ad ad = adService.getAdById(id);
 
         // Bolje je porediti preko ID-a nego preko celog objekta zbog Proxy-ja
-        boolean removed = user.getFavoriteAds().removeIf(fav -> fav.getId().equals(adId));
+        boolean removed = user.getFavoriteAds().removeIf(fav -> fav.getId().equals(id));
 
         if (removed) {
             userRepository.save(user);
