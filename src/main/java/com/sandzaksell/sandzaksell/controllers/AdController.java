@@ -16,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/ads")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:5173", "https://sandzak-sell-marketplace.vercel.app"})
+@CrossOrigin(origins = "http://localhost:5173")
 public class AdController {
 
     private final AdService adService;
