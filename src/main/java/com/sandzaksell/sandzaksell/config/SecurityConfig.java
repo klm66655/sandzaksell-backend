@@ -67,9 +67,15 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/tokens/add").authenticated()
 
+                        // Dozvoli korisniku da vidi svoje omiljene (GET) i da doda/ukloni (POST)
+                        .requestMatchers(HttpMethod.GET, "/api/ads/favorites").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/ads/*/favorite").authenticated()
+
                         // 3. Dozvoli GET metode za oglase da bi sajt bio vidljiv i bez logina
                         .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+
+
 
 
 
