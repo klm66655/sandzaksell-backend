@@ -7,6 +7,7 @@ import com.sandzaksell.sandzaksell.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import java.security.Principal;
@@ -15,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/ads")
 @RequiredArgsConstructor
-
+@CrossOrigin(origins = {"http://localhost:5173", "https://sandzak-sell-marketplace.vercel.app"})
 public class AdController {
 
     private final AdService adService;
@@ -110,16 +111,20 @@ public class AdController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 
+    @Transactional // OBAVEZNO DODAJ OVO
     @PostMapping("/{adId}/favorite")
     public ResponseEntity<?> toggleFavorite(@PathVariable Long adId, Principal principal) {
         if (principal == null) return ResponseEntity.status(401).body("Moraš biti ulogovan!");
 
         User user = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+
         Ad ad = adService.getAdById(adId);
 
-        if (user.getFavoriteAds().contains(ad)) {
-            user.getFavoriteAds().remove(ad);
+        // Bolje je porediti preko ID-a nego preko celog objekta zbog Proxy-ja
+        boolean removed = user.getFavoriteAds().removeIf(fav -> fav.getId().equals(adId));
+
+        if (removed) {
             userRepository.save(user);
             return ResponseEntity.ok("Uklonjeno iz omiljenih");
         } else {
