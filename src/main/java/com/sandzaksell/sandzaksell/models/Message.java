@@ -25,7 +25,11 @@ public class Message {
 
     @ManyToOne
     @JoinColumn(name = "receiver_id")
-    private User receiver; // Kome stiže poruka
+    private User receiver; // Kome stiže
+
+
+    @Column(name = "is_read")
+    private boolean isRead = false; // Po defaultu je nepročitana
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;

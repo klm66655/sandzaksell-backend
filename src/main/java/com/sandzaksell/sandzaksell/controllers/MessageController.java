@@ -94,4 +94,29 @@ public class MessageController {
 
         return messageService.getContactedUsers(userId);
     }
+    @GetMapping("/unread-count/{userId}")
+    public ResponseEntity<Long> getUnreadCount(@PathVariable Long userId, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+
+        // Sigurnosna provera
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+        if (!currentUser.getId().equals(userId)) return ResponseEntity.status(403).build();
+
+        long count = messageService.countUnreadMessages(userId);
+        return ResponseEntity.ok(count);
+    }
+
+    // 2. Metoda koja označava sve poruke kao pročitane (kada korisnik klikne na "Poruke" u Navbaru)
+    @PostMapping("/mark-as-read/{userId}")
+    public ResponseEntity<Void> markAsRead(@PathVariable Long userId, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+        if (!currentUser.getId().equals(userId)) return ResponseEntity.status(403).build();
+
+        messageService.markAllMessagesAsRead(userId);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -43,6 +43,20 @@ public class MessageService {
         return messageRepository.findChatHistory(u1, u2);
     }
 
+    public long countUnreadMessages(Long receiverId) {
+        return messageRepository.countByReceiverIdAndReadFalse(receiverId);
+    }
+
+    // ISPRAVLJENO: Koristi 'ReadFalse' i 'setRead(true)'
+    @Transactional
+    public void markAllMessagesAsRead(Long receiverId) {
+        List<Message> unreadMessages = messageRepository.findByReceiverIdAndReadFalse(receiverId);
+        for (Message m : unreadMessages) {
+            m.setRead(true); // Lombok za polje 'read' pravi 'setRead'
+        }
+        messageRepository.saveAll(unreadMessages);
+    }
+
     public List<User> getContactedUsers(Long userId) {
         return messageRepository.findContactedUsers(userId);
     }
