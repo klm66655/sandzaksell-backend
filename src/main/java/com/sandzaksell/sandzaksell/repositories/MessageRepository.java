@@ -26,11 +26,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // 3. Sve poruke primaoca sortirane po vremenu
     List<Message> findByReceiverIdOrderByTimestampDesc(Long receiverId);
 
-    // 4. Pronalaženje svih nepročitanih poruka za korisnika
-    List<Message> findByReceiverIdAndReadFalse(Long receiverId);
-
-    // 5. Brojanje nepročitanih poruka (za bedž na Navbaru)
-    long countByReceiverIdAndReadFalse(Long receiverId);
 
     // 6. Provera poruka između dva korisnika (alternativna metoda)
     List<Message> findBySenderIdAndReceiverIdOrSenderIdAndReceiverId(Long s1, Long r1, Long s2, Long r2);
