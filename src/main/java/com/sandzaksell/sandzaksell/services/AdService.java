@@ -7,6 +7,8 @@ import com.sandzaksell.sandzaksell.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.sandzaksell.sandzaksell.models.Notification;
+import com.sandzaksell.sandzaksell.repositories.NotificationRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,6 +18,7 @@ import java.util.List;
 public class AdService {
     private final AdRepository adRepository;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
     // 1. POPRAVLJENO: Vuče samo oglase korisnika koji NISU banovani
     public List<Ad> getAllAds() {

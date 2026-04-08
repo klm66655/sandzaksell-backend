@@ -10,6 +10,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import com.sandzaksell.sandzaksell.models.Notification;
+import com.sandzaksell.sandzaksell.repositories.NotificationRepository;
 import java.security.Principal;
 import java.util.List;
 
@@ -21,6 +23,7 @@ public class AdController {
 
     private final AdService adService;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
     @GetMapping
     public List<Ad> getAll() { return adService.getAllAds(); }
@@ -111,25 +114,43 @@ public class AdController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 
-    @Transactional // OBAVEZNO DODAJ OVO
+    @Transactional
     @PostMapping("/favorite/{id}")
     public ResponseEntity<?> toggleFavorite(@PathVariable Long id, Principal principal) {
         if (principal == null) return ResponseEntity.status(401).body("Moraš biti ulogovan!");
 
-        User user = userRepository.findByUsername(principal.getName())
+        User currentUser = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
         Ad ad = adService.getAdById(id);
 
-        // Bolje je porediti preko ID-a nego preko celog objekta zbog Proxy-ja
-        boolean removed = user.getFavoriteAds().removeIf(fav -> fav.getId().equals(id));
+        // Proveravamo da li je već u favoritima
+        boolean alreadyFavorite = currentUser.getFavoriteAds().stream()
+                .anyMatch(fav -> fav.getId().equals(id));
 
-        if (removed) {
-            userRepository.save(user);
+        if (alreadyFavorite) {
+            // 1. UKLANJANJE
+            currentUser.getFavoriteAds().removeIf(fav -> fav.getId().equals(id));
+            userRepository.save(currentUser);
             return ResponseEntity.ok("Uklonjeno iz omiljenih");
         } else {
-            user.getFavoriteAds().add(ad);
-            userRepository.save(user);
+            // 2. DODAVANJE
+            currentUser.getFavoriteAds().add(ad);
+            userRepository.save(currentUser);
+
+            // 3. KREIRANJE NOTIFIKACIJE (Samo ako nije tvoj oglas)
+            if (!ad.getUser().getId().equals(currentUser.getId())) {
+                Notification notification = new Notification();
+                notification.setUser(ad.getUser()); // Vlasnik oglasa dobija notifikaciju
+                notification.setMessage("Korisnik " + currentUser.getUsername() + " je sačuvao vaš oglas: " + ad.getTitle());
+                notification.setType("FAVORITE");
+                notification.setRelatedId(ad.getId());
+                notification.setIsRead(false);
+                notification.setCreatedAt(java.time.LocalDateTime.now());
+
+                notificationRepository.save(notification);
+            }
+
             return ResponseEntity.ok("Dodato u omiljene");
         }
     }

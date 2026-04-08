@@ -65,6 +65,10 @@ public class User {
     private List<Review> reviewsReceived;
 
     @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Notification> notifications = new ArrayList<>();
+
+    @JsonIgnore
     @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL)
     private List<Review> reviewsGiven;
 
