@@ -36,7 +36,8 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByReceiverIdAndSenderIdAndReadFalse(Long receiverId, Long senderId);
 
     // 4. NAVBAR BADGE - ISPRAVLJENO: Izbačeno 'Is'
-    long countByReceiverIdAndReadFalse(Long receiverId);
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.receiver.id = :receiverId AND m.read = false")
+    long countUnreadMessages(@Param("receiverId") Long receiverId);
 
     // 5. BRZI UPDATE ZA SEEN - Ovo dodajemo da ne bi vrteo petlje u servisu
     @Modifying

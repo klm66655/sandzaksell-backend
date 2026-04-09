@@ -48,9 +48,8 @@ public class MessageService {
 
     // NAVBAR BADGE: Usklađeno sa novim imenom metode u Repository-ju (bez 'Is')
     public long getUnreadCount(Long userId) {
-        return messageRepository.countByReceiverIdAndReadFalse(userId);
+        return messageRepository.countUnreadMessages(userId); // ← novo ime
     }
-
     // SEEN LOGIKA: Optimizovano da jednim SQL potezom sve markira kao pročitano
     @Transactional
     public void markConversationAsRead(Long receiverId, Long senderId) {
