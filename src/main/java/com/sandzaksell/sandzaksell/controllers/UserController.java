@@ -1,6 +1,7 @@
 package com.sandzaksell.sandzaksell.controllers;
 
 import com.sandzaksell.sandzaksell.dto.LoginResponse;
+import com.sandzaksell.sandzaksell.dto.UserPublicDTO;
 import com.sandzaksell.sandzaksell.models.User;
 import com.sandzaksell.sandzaksell.services.UserService;
 import com.sandzaksell.sandzaksell.services.EmailService;
@@ -101,8 +102,14 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable Long id) {
-        return userService.getUserById(id);
+    public ResponseEntity<UserPublicDTO> getUserById(@PathVariable Long id) {
+        User user = userService.getUserById(id);
+        return ResponseEntity.ok(new UserPublicDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getProfileImageUrl(),
+                user.getPhone()
+        ));
     }
 
     @PutMapping("/{id}/add-tokens")
