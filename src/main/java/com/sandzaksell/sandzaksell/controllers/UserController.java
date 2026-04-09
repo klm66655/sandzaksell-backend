@@ -1,6 +1,7 @@
 package com.sandzaksell.sandzaksell.controllers;
 
 import com.sandzaksell.sandzaksell.dto.LoginResponse;
+import com.sandzaksell.sandzaksell.dto.UserPrivateDTO;
 import com.sandzaksell.sandzaksell.dto.UserPublicDTO;
 import com.sandzaksell.sandzaksell.models.User;
 import com.sandzaksell.sandzaksell.services.UserService;
@@ -126,6 +127,14 @@ public class UserController {
     public ResponseEntity<?> getMyProfile(Principal principal) {
         if (principal == null) return ResponseEntity.status(401).build();
         User user = userService.getUserByUsername(principal.getName());
-        return ResponseEntity.ok(user); // Vraća sve jer si ti vlasnik
+        return ResponseEntity.ok(new UserPrivateDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getProfileImageUrl(),
+                user.getPhone(),
+                user.getTokenBalance(),
+                user.getEnabled()
+        ));
     }
 }
