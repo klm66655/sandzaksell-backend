@@ -21,13 +21,17 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // 2. SORTIRANJE KONTAKATA - Ostaje isto
     @Query(value = "SELECT u.* FROM users u " +
             "JOIN (" +
-            "    SELECT CASE WHEN sender_id = :userId THEN receiver_id ELSE sender_id END as contact_id, " +
-            "    MAX(timestamp) as last_msg " +
-            "    FROM messages " +
-            "    WHERE sender_id = :userId OR receiver_id = :userId " +
-            "    GROUP BY contact_id" +
-            ") last_msgs ON u.id = last_msgs.contact_id " +
-            "ORDER BY last_msgs.last_msg DESC", nativeQuery = true)
+            "    SELECT DISTINCT ON (contact_id) " +
+            "           contact_id, " +
+            "           timestamp " +
+            "    FROM (" +
+            "        SELECT receiver_id AS contact_id, timestamp FROM messages WHERE sender_id = :userId " +
+            "        UNION ALL " +
+            "        SELECT sender_id AS contact_id, timestamp FROM messages WHERE receiver_id = :userId " +
+            "    ) all_msgs " +
+            "    ORDER BY contact_id, timestamp DESC" +
+            ") final_msgs ON u.id = final_msgs.contact_id " +
+            "ORDER BY final_msgs.timestamp DESC", nativeQuery = true)
     List<User> findContactedUsers(@Param("userId") Long userId);
 
     // 3. SEEN LOGIKA - ISPRAVLJENO: Izbačeno 'Is' jer se polje sada zove 'read'
