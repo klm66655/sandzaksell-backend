@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/ads").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/ads/*/make-premium").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/ads/*/view").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/ads/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/users/change-password").authenticated()
@@ -65,7 +66,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/tokens/add").authenticated()
 
                         .requestMatchers(HttpMethod.PUT, "/api/ads/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/ads/**").authenticated()
+
                         .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/user/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
