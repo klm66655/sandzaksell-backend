@@ -1,5 +1,6 @@
 package com.sandzaksell.sandzaksell.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
@@ -43,8 +44,11 @@ public class Message {
     @Column(name = "is_delivered")
     private Boolean delivered = false;
 
+    @JsonIgnore
     @Transient
     private Long senderId;
+
+    @JsonIgnore
     @Transient
     private Long receiverId;
 }
