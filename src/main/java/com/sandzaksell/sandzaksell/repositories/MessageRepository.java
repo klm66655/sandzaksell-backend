@@ -21,11 +21,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // 2. SORTIRANJE KONTAKATA - Ostaje isto
     @Query(value = "SELECT u.* FROM users u " +
             "JOIN (" +
-            "    SELECT contact_id, MAX(m.\"timestamp\") as last_msg " +
+            "    SELECT contact_id, MAX(timestamp) as last_msg " +
             "    FROM (" +
-            "        SELECT receiver_id AS contact_id, \"timestamp\" FROM messages WHERE sender_id = :userId " +
+            "        SELECT receiver_id AS contact_id, timestamp FROM messages WHERE sender_id = :userId " +
             "        UNION ALL " +
-            "        SELECT sender_id AS contact_id, \"timestamp\" FROM messages WHERE receiver_id = :userId " +
+            "        SELECT sender_id AS contact_id, timestamp FROM messages WHERE receiver_id = :userId " +
             "    ) all_msgs " +
             "    GROUP BY contact_id" +
             ") final_msgs ON u.id = final_msgs.contact_id " +
