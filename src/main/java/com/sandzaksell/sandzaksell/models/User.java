@@ -31,8 +31,11 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+
+    @JsonIgnore
     private String role = "ROLE_USER";
 
+    @JsonIgnore
     @Column(name = "token_balance")
     private Integer tokenBalance = 0;
 
@@ -57,6 +60,7 @@ public class User {
     @JsonIgnore
     private LocalDateTime resetCodeExpiresAt;
 
+    @JsonIgnore
     private Boolean enabled = true;
     private String phone;
 
