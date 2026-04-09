@@ -7,7 +7,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -30,14 +29,12 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Loguj svaki dolazni zahtev da vidimo rutu
-        System.out.println("DEBUG: Dolazni zahtev na: " + request.getMethod() + " " + request.getRequestURI());
+        // 1. LOG I OPTIONS CHECK (CORS Preflight)
+        System.out.println("DEBUG: Dolazni zahtev: " + request.getMethod() + " " + request.getRequestURI());
 
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            response.setHeader("Access-Control-Allow-Origin", "https://sandzak-sell-marketplace.vercel.app");
-            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-            response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Origin, Accept");
-            response.setHeader("Access-Control-Allow-Credentials", "true");
+            // Pustamo OPTIONS da prođe bez ikakve provere tokena.
+            // Headere će dodati CorsFilter koji smo podesili u SecurityConfig.
             response.setStatus(HttpServletResponse.SC_OK);
             return;
         }
@@ -46,51 +43,42 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = null;
         String username = null;
 
-        // 1. Provera Header-a
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-            try {
+        try {
+            // 2. IZVLAČENJE TOKENA
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7);
                 username = jwtService.extractUserName(token);
-                System.out.println("DEBUG: Username izvučen iz tokena: " + username);
-            } catch (Exception e) {
-                System.out.println("DEBUG: Greška pri čitanju tokena: " + e.getMessage());
             }
-        } else {
-            // Ako nema tokena, a ruta traži login, ovde je problem
-            System.out.println("DEBUG: Nema Authorization Bearer header-a!");
+
+            // 3. AUTENTIFIKACIJA AKO JE TOKEN TU
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+                // Provera da li je korisnik banovan
+                if (!userDetails.isEnabled()) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.getWriter().write("{\"message\": \"Account is disabled.\"}");
+                    return;
+                }
+
+                if (jwtService.validateToken(token, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                    // Postavljamo korisnika u SecurityContext
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("DEBUG: Autentifikacija uspešna za: " + username);
+                }
+            }
+        } catch (Exception e) {
+            // Ako token istekne ili je neispravan, samo ispišemo log, ne rušimo aplikaciju.
+            // Spring Security će svakako vratiti 401 jer Authentication neće biti u kontekstu.
+            System.out.println("DEBUG: JWT Error -> " + e.getMessage());
         }
 
-        // 2. Autentifikacija
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-            // --- OVDE IDU TVOJE LINIJE ---
-            System.out.println("DEBUG: Učitan korisnik iz baze: " + userDetails.getUsername());
-            System.out.println("DEBUG: Role korisnika u Security: " + userDetails.getAuthorities());
-
-            if (!userDetails.isEnabled()) {
-                System.out.println("DEBUG: Korisnik je BANovan!");
-                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
-                response.getWriter().write("{\"message\": \"Vaš nalog je banovan.\"}");
-                return;
-            }
-
-            if (jwtService.validateToken(token, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                System.out.println("DEBUG: Autentifikacija USPEŠNO postavljena u SecurityContext!");
-            } else {
-                System.out.println("DEBUG: Token NIJE VALIDAN (možda je istekao ili je SecretKey promenjen)");
-            }
-        }
-
-        // 3. Pusti zahtev dalje ka kontroleru
+        // 4. NASTAVAK LANCA FILTERA
         filterChain.doFilter(request, response);
     }
 }
