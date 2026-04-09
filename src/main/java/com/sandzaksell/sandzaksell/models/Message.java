@@ -35,10 +35,10 @@ public class Message {
     private LocalDateTime timestamp = LocalDateTime.now();
 
     @Column(name = "is_read")
-    private boolean read = false;
+    private Boolean read = false;
 
     @Column(name = "is_delivered")
-    private boolean delivered = false;
+    private Boolean delivered = false;
 
     @Transient
     private Long senderId;
