@@ -63,7 +63,9 @@ public class AdService {
         return adRepository.save(ad);
     }
 
+    @Transactional
     public void deleteAd(Long id) {
+        userRepository.removeAdFromAllFavorites(id);
         adRepository.deleteById(id);
     }
 
