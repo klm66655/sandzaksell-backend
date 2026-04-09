@@ -120,4 +120,12 @@ public class UserController {
     public User addTokens(@PathVariable Long id, @RequestParam Integer amount) {
         return userService.updateTokens(id, amount);
     }
+
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyProfile(Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        User user = userService.getUserByUsername(principal.getName());
+        return ResponseEntity.ok(user); // Vraća sve jer si ti vlasnik
+    }
 }
