@@ -50,6 +50,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/login", "/api/users/register", "/api/users/google-login").permitAll()
                         .requestMatchers("/api/users/forgot-password", "/api/users/reset-password").permitAll()
 
+                        .requestMatchers("/api/messages/**").authenticated()
+
                         // --- OVDE JE BITNA PROMENA: SPECIFIČNE RUTE ZA OGLASE KOJE TRAŽE LOGIN ---
                         // Ove rute MORAJU biti iznad opšteg GET /api/ads/**
                         .requestMatchers(HttpMethod.GET, "/api/ads/favorites").authenticated()
@@ -67,7 +69,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/users/update-image").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/reviews/add").authenticated()
                         .requestMatchers("/api/tokens/add").authenticated()
-                        .requestMatchers("/api/messages/**").authenticated()
+
 
                         // Ostale akcije nad oglasima (Update/Delete)
                         .requestMatchers(HttpMethod.PUT, "/api/ads/**").authenticated()

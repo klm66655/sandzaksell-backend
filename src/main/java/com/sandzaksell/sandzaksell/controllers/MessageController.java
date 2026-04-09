@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -26,73 +25,79 @@ public class MessageController {
         this.messagingTemplate = messagingTemplate;
     }
 
+    // 1. SLANJE PORUKE (Secured)
     @PostMapping("/send")
-    public ResponseEntity<Message> send(@RequestBody Message message, Principal principal) {
-        if (principal == null) {
-            return ResponseEntity.status(401).build();
-        }
+    public ResponseEntity<?> send(@RequestBody Message message, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body("Niste autorizovani");
 
-        // 1. Nađi pošiljaoca (ulogovanog korisnika)
-        User currentUser = userRepository.findByUsername(principal.getName())
+        // Uzimamo pošiljaoca IZ TOKENA, ne iz body-ja (Security!)
+        User sender = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
-        // 2. Proveri da li šalje samom sebi
-        if (message.getReceiver() == null || currentUser.getId().equals(message.getReceiver().getId())) {
-            throw new RuntimeException("Neispravan primalac ili šaljete poruku sami sebi!");
+        if (message.getReceiver() == null || sender.getId().equals(message.getReceiver().getId())) {
+            return ResponseEntity.badRequest().body("Neispravan primalac");
         }
 
-        // 3. Postavi pošiljaoca i snimi poruku u bazu PRVO
-        message.setSender(currentUser);
-        message.setTimestamp(java.time.LocalDateTime.now()); // Dobra praksa ako već nemaš u servisu
+        message.setSender(sender);
         Message savedMessage = messageService.sendMessage(message);
 
-        // 4. TEK SAD šalješ notifikaciju preko WebSocketa
-        // Koristimo ID primaoca kao destinaciju
+        // REAL-TIME: Šaljemo preko WebSocketa primaocu
         try {
-            // Ručno pravimo putanju: /topic/notifications/ID_PRIMAOCA
-            String destination = "/topic/notifications/" + savedMessage.getReceiver().getId();
+            String destination = "/topic/messages/" + savedMessage.getReceiver().getId();
+            messagingTemplate.convertAndSend(destination, savedMessage);
 
-            messagingTemplate.convertAndSend(
-                    destination,
-                    savedMessage
-            );
-            System.out.println("Notifikacija poslata na kanal: " + destination);
+            // Šaljemo i notifikaciju za bedž u Navbaru
+            messagingTemplate.convertAndSend("/topic/notif-count/" + savedMessage.getReceiver().getId(), "new");
         } catch (Exception e) {
-            System.err.println("Greška pri slanju WebSocket notifikacije: " + e.getMessage());
+            System.err.println("WS Error: " + e.getMessage());
         }
 
         return ResponseEntity.ok(savedMessage);
     }
 
-    @GetMapping("/history/{u1}/{u2}")
-    public List<Message> getHistory(@PathVariable Long u1, @PathVariable Long u2, Principal principal) {
-        if (principal == null) throw new RuntimeException("Pristup odbijen!");
+    // 2. ISTORIJA RAZGOVORA (Secured)
+    @GetMapping("/history/{otherUserId}")
+    public ResponseEntity<List<Message>> getHistory(@PathVariable Long otherUserId, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
 
         User currentUser = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
-        // SIGURNOST: Ako ulogovani lik nije ni u1 ni u2, IZBACI GA (403 Forbidden)
-        if (!currentUser.getId().equals(u1) && !currentUser.getId().equals(u2)) {
-            throw new RuntimeException("Nemate dozvolu da čitate ovaj razgovor!");
-        }
-
-        return messageService.getChatHistory(u1, u2);
+        // Koristimo ID iz tokena kao u1, a path variable kao u2
+        List<Message> history = messageService.getChatHistory(currentUser.getId(), otherUserId);
+        return ResponseEntity.ok(history);
     }
 
-    @GetMapping("/contacts/{userId}")
-    public List<User> getContacts(@PathVariable Long userId, Principal principal) {
-        if (principal == null) return new ArrayList<>();
+    // 3. LISTA KONTAKATA (Secured & Sorted)
+    @GetMapping("/contacts")
+    public ResponseEntity<List<User>> getContacts(Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
 
-        // POPRAVKA: Ovde je bio findByEmail, promenjeno u findByUsername
         User currentUser = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
 
-        // SIGURNOST: Ne dozvoli da korisnik vidi tuđu listu kontakata
-        if (!currentUser.getId().equals(userId)) {
-            return new ArrayList<>();
-        }
-
-        return messageService.getContactedUsers(userId);
+        // Vraća sortirano: ko ti je zadnji pisao, taj je prvi na listi
+        return ResponseEntity.ok(messageService.getContactedUsers(currentUser.getId()));
     }
 
+    // 4. NAVBAR UNREAD COUNT
+    @GetMapping("/unread-count")
+    public ResponseEntity<Long> getUnreadCount(Principal principal) {
+        if (principal == null) return ResponseEntity.ok(0L);
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+
+        return ResponseEntity.ok(messageService.getUnreadCount(currentUser.getId()));
+    }
+
+    // 5. SEEN - MARK AS READ
+    @PostMapping("/mark-seen/{senderId}")
+    public ResponseEntity<?> markSeen(@PathVariable Long senderId, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+
+        messageService.markConversationAsRead(currentUser.getId(), senderId);
+        return ResponseEntity.ok().build();
+    }
 }

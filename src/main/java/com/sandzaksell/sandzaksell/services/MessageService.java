@@ -1,5 +1,3 @@
-
-
 package com.sandzaksell.sandzaksell.services;
 
 import com.sandzaksell.sandzaksell.models.Message;
@@ -24,30 +22,42 @@ public class MessageService {
 
     @Transactional
     public Message sendMessage(Message message) {
-        // Pošiljalac je već postavljen u kontroleru i on je "realan" iz baze
-        User sender = message.getSender();
-
-        // Primaoca moramo proveriti jer nam sa frontenda stiže samo njegov ID
+        // Osiguravamo da je primalac validan
         User receiver = userRepository.findById(message.getReceiver().getId())
                 .orElseThrow(() -> new RuntimeException("Primalac nije nađen"));
 
-        message.setSender(sender);
         message.setReceiver(receiver);
+        message.setTimestamp(LocalDateTime.now());
 
-        if (message.getTimestamp() == null) {
-            message.setTimestamp(LocalDateTime.now());
-        }
+        // MODERNO: Početni statusi poruke
+        message.setRead(false);       // Seen: false
+        message.setDelivered(true);   // Delivered: true (jer je stigla do servera)
 
         return messageRepository.save(message);
     }
 
-    public List<Message> getChatHistory(Long u1, Long u2) {
-        return messageRepository.findChatHistory(u1, u2);
+    // SIGURNOST: Samo učesnici razgovora mogu dobiti istoriju
+    public List<Message> getChatHistory(Long requesterId, Long otherUserId) {
+        return messageRepository.findChatHistory(requesterId, otherUserId);
     }
 
-
-
+    // MODERNO: Vraća kontakte sortirane po najnovijoj poruci (naš novi Query)
     public List<User> getContactedUsers(Long userId) {
         return messageRepository.findContactedUsers(userId);
+    }
+
+    // NAVBAR BADGE: Broji ukupno nepročitane za celog usera
+    public long getUnreadCount(Long userId) {
+        return messageRepository.countByReceiverIdAndIsReadFalse(userId);
+    }
+
+    // SEEN LOGIKA: Markira poruke kao pročitane samo za taj specifičan razgovor
+    @Transactional
+    public void markConversationAsRead(Long receiverId, Long senderId) {
+        List<Message> unreadMessages = messageRepository.findByReceiverIdAndSenderIdAndIsReadFalse(receiverId, senderId);
+        if (!unreadMessages.isEmpty()) {
+            unreadMessages.forEach(msg -> msg.setRead(true));
+            messageRepository.saveAll(unreadMessages);
+        }
     }
 }
