@@ -29,35 +29,31 @@ public class MessageService {
         message.setReceiver(receiver);
         message.setTimestamp(LocalDateTime.now());
 
-        // MODERNO: Početni statusi poruke
-        message.setRead(false);       // Seen: false
-        message.setDelivered(true);   // Delivered: true (jer je stigla do servera)
+        // Koristimo .setRead(false) jer se polje u modelu zove 'read'
+        message.setRead(false);
+        message.setDelivered(true);
 
         return messageRepository.save(message);
     }
 
-    // SIGURNOST: Samo učesnici razgovora mogu dobiti istoriju
     public List<Message> getChatHistory(Long requesterId, Long otherUserId) {
         return messageRepository.findChatHistory(requesterId, otherUserId);
     }
 
-    // MODERNO: Vraća kontakte sortirane po najnovijoj poruci (naš novi Query)
     public List<User> getContactedUsers(Long userId) {
         return messageRepository.findContactedUsers(userId);
     }
 
-    // NAVBAR BADGE: Broji ukupno nepročitane za celog usera
+    // NAVBAR BADGE: Usklađeno sa novim imenom metode u Repository-ju (bez 'Is')
     public long getUnreadCount(Long userId) {
-        return messageRepository.countByReceiverIdAndIsReadFalse(userId);
+        return messageRepository.countByReceiverIdAndReadFalse(userId);
     }
 
-    // SEEN LOGIKA: Markira poruke kao pročitane samo za taj specifičan razgovor
+    // SEEN LOGIKA: Optimizovano da jednim SQL potezom sve markira kao pročitano
     @Transactional
     public void markConversationAsRead(Long receiverId, Long senderId) {
-        List<Message> unreadMessages = messageRepository.findByReceiverIdAndSenderIdAndIsReadFalse(receiverId, senderId);
-        if (!unreadMessages.isEmpty()) {
-            unreadMessages.forEach(msg -> msg.setRead(true));
-            messageRepository.saveAll(unreadMessages);
-        }
+        // Više nema petlje unreadMessages.forEach...
+        // Pozivamo direktno UPDATE query iz repository-ja
+        messageRepository.markAllAsRead(receiverId, senderId);
     }
 }

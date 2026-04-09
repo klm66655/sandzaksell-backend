@@ -20,13 +20,12 @@ public class Message {
 
     @ManyToOne
     @JoinColumn(name = "sender_id", nullable = false)
-    // OVO JE KLJUČ: Sprečava da se povuku sve poruke i reklame usera u beskonačno
-    @JsonIgnoreProperties({"messages", "ads", "favorites", "password", "email", "tokens"})
+    @JsonIgnoreProperties({"messages", "ads", "favorites", "password", "email", "tokens", "role", "tokenBalance"})
     private User sender;
 
     @ManyToOne
     @JoinColumn(name = "receiver_id", nullable = false)
-    @JsonIgnoreProperties({"messages", "ads", "favorites", "password", "email", "tokens"})
+    @JsonIgnoreProperties({"messages", "ads", "favorites", "password", "email", "tokens", "role", "tokenBalance"})
     private User receiver;
 
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -35,8 +34,6 @@ public class Message {
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    // Promeni ime polja u 'read' i 'delivered'
-    // Hibernate će ih u bazi i dalje mapirati na 'is_read' i 'is_delivered' zbog anotacija
     @Column(name = "is_read")
     private boolean read = false;
 
