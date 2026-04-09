@@ -34,10 +34,13 @@ public class UserController {
     // --- SADA KORISTI @Valid IZ MODELA ---
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody User user) {
-        // Više ti ne trebaju ručni "if" uslovi ovde!
-        // @Valid će automatski proveriti email format i dužinu lozinke
-        // na osnovu onoga što smo upisali u User.java klasu.
-        return ResponseEntity.ok(userService.registerUser(user));
+        User saved = userService.registerUser(user);
+        return ResponseEntity.ok(new UserPublicDTO(
+                saved.getId(),
+                saved.getUsername(),
+                saved.getProfileImageUrl(),
+                saved.getPhone()
+        ));
     }
 
     @PutMapping("/change-password")
