@@ -19,13 +19,15 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findChatHistory(@Param("u1") Long user1Id, @Param("u2") Long user2Id);
 
     // 2. SORTIRANJE KONTAKATA - Ostaje isto
-    @Query("SELECT u FROM User u WHERE u.id IN (" +
-            "SELECT m.sender.id FROM Message m WHERE m.receiver.id = :userId " +
-            "UNION " +
-            "SELECT m.receiver.id FROM Message m WHERE m.sender.id = :userId) " +
-            "ORDER BY (SELECT MAX(m2.timestamp) FROM Message m2 WHERE " +
-            "(m2.sender.id = u.id AND m2.receiver.id = :userId) OR " +
-            "(m2.sender.id = :userId AND m2.receiver.id = u.id)) DESC")
+    @Query(value = "SELECT u.* FROM users u " +
+            "JOIN (" +
+            "    SELECT CASE WHEN sender_id = :userId THEN receiver_id ELSE sender_id END as contact_id, " +
+            "    MAX(timestamp) as last_msg " +
+            "    FROM messages " +
+            "    WHERE sender_id = :userId OR receiver_id = :userId " +
+            "    GROUP BY contact_id" +
+            ") last_msgs ON u.id = last_msgs.contact_id " +
+            "ORDER BY last_msgs.last_msg DESC", nativeQuery = true)
     List<User> findContactedUsers(@Param("userId") Long userId);
 
     // 3. SEEN LOGIKA - ISPRAVLJENO: Izbačeno 'Is' jer se polje sada zove 'read'
