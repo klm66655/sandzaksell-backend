@@ -45,6 +45,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Query("UPDATE Message m SET m.read = true WHERE m.receiver.id = :receiverId AND m.sender.id = :senderId AND m.read = false")
     void markAllAsRead(@Param("receiverId") Long receiverId, @Param("senderId") Long senderId);
 
+    @Modifying
+    @Transactional
+    @Query("UPDATE Message m SET m.read = true WHERE m.receiver.id = :receiverId AND m.read = false")
+    void markAllMessagesAsRead(@Param("receiverId") Long receiverId);
+
     // 6. SIGURNOSNA PROVERA
     @Query("SELECT CASE WHEN COUNT(m) > 0 THEN true ELSE false END FROM Message m " +
             "WHERE m.id = :messageId AND (m.sender.id = :userId OR m.receiver.id = :userId)")

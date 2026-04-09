@@ -57,4 +57,9 @@ public class MessageService {
         // Pozivamo direktno UPDATE query iz repository-ja
         messageRepository.markAllAsRead(receiverId, senderId);
     }
+
+    @Transactional
+    public void markAllAsRead(Long receiverId) {
+        messageRepository.markAllMessagesAsRead(receiverId);
+    }
 }

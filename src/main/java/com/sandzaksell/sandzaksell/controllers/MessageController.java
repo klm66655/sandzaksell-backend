@@ -100,4 +100,14 @@ public class MessageController {
         messageService.markConversationAsRead(currentUser.getId(), senderId);
         return ResponseEntity.ok().build();
     }
+
+
+    @PostMapping("/mark-all-read")
+    public ResponseEntity<?> markAllRead(Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        User currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Korisnik nije nađen"));
+        messageService.markAllAsRead(currentUser.getId());
+        return ResponseEntity.ok().build();
+    }
 }
