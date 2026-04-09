@@ -54,6 +54,7 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/ads/favorites").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/ads/favorite/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/ads").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/ads/*/make-premium").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/ads/*/view").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
@@ -62,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/users/update-image").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/reviews/add").authenticated()
                         .requestMatchers("/api/tokens/add").authenticated()
+
                         .requestMatchers(HttpMethod.PUT, "/api/ads/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/ads/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
