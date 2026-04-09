@@ -33,6 +33,8 @@ public class MessageService {
         message.setRead(false);
         message.setDelivered(true);
 
+
+
         return messageRepository.save(message);
     }
 

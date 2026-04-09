@@ -31,12 +31,15 @@ public class Message {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "timestamp", nullable = false)
+    @Builder.Default  // OVO DODAJ
+    @Column(name = "timestamp", nullable = false, updatable = false) // updatable = false je bitno!
     private LocalDateTime timestamp = LocalDateTime.now();
 
+    @Builder.Default  // OVO DODAJ
     @Column(name = "is_read")
     private Boolean read = false;
 
+    @Builder.Default  // OVO DODAJ
     @Column(name = "is_delivered")
     private Boolean delivered = false;
 
