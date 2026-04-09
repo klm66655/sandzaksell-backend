@@ -1,6 +1,6 @@
 package com.sandzaksell.sandzaksell.models;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder // Olakšaće nam kreiranje poruka u servisu
+@Builder
 public class Message {
 
     @Id
@@ -20,10 +20,13 @@ public class Message {
 
     @ManyToOne
     @JoinColumn(name = "sender_id", nullable = false)
+    // OVO JE KLJUČ: Sprečava da se povuku sve poruke i reklame usera u beskonačno
+    @JsonIgnoreProperties({"messages", "ads", "favorites", "password", "email", "tokens"})
     private User sender;
 
     @ManyToOne
     @JoinColumn(name = "receiver_id", nullable = false)
+    @JsonIgnoreProperties({"messages", "ads", "favorites", "password", "email", "tokens"})
     private User receiver;
 
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -32,15 +35,14 @@ public class Message {
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    // MODERNE FUNKCIJE:
-
+    // Promeni ime polja u 'read' i 'delivered'
+    // Hibernate će ih u bazi i dalje mapirati na 'is_read' i 'is_delivered' zbog anotacija
     @Column(name = "is_read")
-    private boolean isRead = false; // Postaje true kad korisnik otvori chat (SEEN)
+    private boolean read = false;
 
     @Column(name = "is_delivered")
-    private boolean isDelivered = false; // Postaje true kad WebSocket isporuči poruku (DELIVERED)
+    private boolean delivered = false;
 
-    // Pomoćna polja za frontend (ne idu u bazu, ali pomažu kod slanja ID-eva)
     @Transient
     private Long senderId;
     @Transient
