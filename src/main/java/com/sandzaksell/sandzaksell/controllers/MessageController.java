@@ -43,7 +43,7 @@ public class MessageController {
 
         // REAL-TIME: Šaljemo preko WebSocketa primaocu
         try {
-            String destination = "/topic/messages/" + savedMessage.getReceiver().getId();
+            String destination = "/topic/notifications/" + savedMessage.getReceiver().getId();
             messagingTemplate.convertAndSend(destination, savedMessage);
 
             // Šaljemo i notifikaciju za bedž u Navbaru
