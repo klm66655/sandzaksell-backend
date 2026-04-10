@@ -24,6 +24,10 @@ public class Ad {
     private String description;
 
     private Double price;
+
+    @Column(name = "currency", length = 3)
+    private String currency = "EUR";
+
     private String location;
 
     @Column(name = "is_premium")
