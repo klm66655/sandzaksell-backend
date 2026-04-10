@@ -77,6 +77,10 @@ public class User {
     @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL)
     private List<Review> reviewsGiven;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "reportedUser", cascade = CascadeType.ALL)
+    private List<UserReport> reportsReceived = new ArrayList<>();
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
