@@ -18,11 +18,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Čitamo istu varijablu sa Railway-a
+        String allowedOrigins = System.getenv("ALLOWED_ORIGINS");
+        String[] origins;
+
+        if (allowedOrigins != null) {
+            origins = allowedOrigins.split(",");
+        } else {
+            // Fallback na localhost ako nema varijable
+            origins = new String[]{"http://localhost:5173"};
+        }
+
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:5173",
-                        "http://localhost:8081",
-                        "https://sandzak-sell-marketplace.vercel.app",
-                        "https://sandzaksell-backend-production.up.railway.app")
-                .withSockJS(); // Omogućava fallback ako browser ne podržava čist ws
+                .setAllowedOrigins(origins) // Sada pušta sve što si stavio u Railway!
+                .withSockJS();
     }
 }
