@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Setter // Umesto @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
