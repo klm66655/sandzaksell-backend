@@ -93,11 +93,17 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:8081",
-                "https://sandzak-sell-marketplace.vercel.app"
-        ));
+
+        // Ovo omogućava da Backend pročita varijablu iz Railway-a
+        String allowedOrigins = System.getenv("ALLOWED_ORIGINS");
+
+        if (allowedOrigins != null) {
+            config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
+        } else {
+            // Ako nema varijable, ostavi localhost za svaki slučaj
+            config.setAllowedOrigins(List.of("http://localhost:5173"));
+        }
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Origin", "Accept", "X-Requested-With", "Cache-Control"));
         config.setAllowCredentials(true);
