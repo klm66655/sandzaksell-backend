@@ -35,13 +35,17 @@ public class UserController {
     // --- SADA KORISTI @Valid IZ MODELA ---
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody User user) {
-        User saved = userService.registerUser(user);
-        return ResponseEntity.ok(new UserPublicDTO(
-                saved.getId(),
-                saved.getUsername(),
-                saved.getProfileImageUrl(),
-                saved.getPhone()
-        ));
+        try {
+            User saved = userService.registerUser(user);
+            return ResponseEntity.ok(new UserPublicDTO(
+                    saved.getId(),
+                    saved.getUsername(),
+                    saved.getProfileImageUrl(),
+                    saved.getPhone()
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/change-password")
@@ -50,8 +54,8 @@ public class UserController {
         String newPassword = request.get("newPassword");
 
         // Ovde možeš dodati proveru za dužinu nove lozinke ako želiš
-        if (newPassword == null || newPassword.length() < 8) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Nova lozinka mora imati bar 8 karaktera!"));
+        if (newPassword == null || newPassword.length() < 9) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Nova lozinka mora imati bar 9 karaktera!"));
         }
 
         userService.updatePassword(currentUser.getId(), newPassword);

@@ -35,12 +35,16 @@ public class UserService {
 
     @Transactional
     public User registerUser(User user) {
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new RuntimeException("Korisničko ime je već zauzeto!");
+        }
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new RuntimeException("Email je već registrovan!");
+        }
         user.setPassword(encoder.encode(user.getPassword()));
         user.setEnabled(true);
         if (user.getTokenBalance() == null) user.setTokenBalance(0);
-        if (user.getRole() == null || user.getRole().isEmpty()) {
-            user.setRole("ROLE_USER");
-        }
+        user.setRole("ROLE_USER");
         return userRepository.save(user);
     }
 
