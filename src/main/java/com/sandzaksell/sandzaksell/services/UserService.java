@@ -40,8 +40,6 @@ public class UserService {
         if (user.getTokenBalance() == null) user.setTokenBalance(0);
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("ROLE_USER");
-        } else if (!user.getRole().startsWith("ROLE_")) {
-            user.setRole("ROLE_" + user.getRole());
         }
         return userRepository.save(user);
     }
@@ -84,6 +82,9 @@ public class UserService {
         }
 
         if (user.getResetCodeExpiresAt().isBefore(java.time.LocalDateTime.now())) {
+            user.setResetCode(null);
+            user.setResetCodeExpiresAt(null);
+            userRepository.save(user);
             throw new RuntimeException("Kod je istekao!");
         }
 

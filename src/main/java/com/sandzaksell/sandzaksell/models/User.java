@@ -23,13 +23,19 @@ public class User {
     private String googleId;
 
     @Column(unique = true, nullable = false)
+    @NotBlank(message = "Username ne može biti prazan!")
+    @Size(min = 3, max = 30, message = "Username mora biti između 3 i 30 karaktera!")
     private String username;
 
     @Column(unique = true, nullable = false)
+    @NotBlank(message = "Email ne može biti prazan!")
+    @Email(message = "Email nije validan!")
     private String email;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
+    @NotBlank(message = "Lozinka ne može biti prazna!")
+    @Size(min = 8, message = "Lozinka mora imati bar 8 karaktera!")
     private String password;
 
 
