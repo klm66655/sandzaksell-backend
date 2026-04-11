@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Component
-@Order(1) // Da se izvršava pre svih ostalih filtera
+@Order(1)
 public class RateLimitingFilter implements Filter {
 
     @Autowired
@@ -25,22 +25,20 @@ public class RateLimitingFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        // Uzimamo IP adresu korisnika
         String ipAddr = httpRequest.getHeader("X-Forwarded-For");
-        if (ipAddr == null || ipAddr.isEmpty()) {
+        if (ipAddr != null && !ipAddr.isEmpty()) {
+            ipAddr = ipAddr.split(",")[0].trim();
+        } else {
             ipAddr = httpRequest.getRemoteAddr();
         }
 
-        System.out.println(">>> RATE LIMIT IP: " + ipAddr + " | Žetoni: " + rateLimitService.resolveBucket(ipAddr).getAvailableTokens());
-
         Bucket bucket = rateLimitService.resolveBucket(ipAddr);
 
+
         if (bucket.tryConsume(1)) {
-            // Ima žetona, pusti ga dalje na sajt
             chain.doFilter(request, response);
         } else {
-            // Nema žetona - previše zahteva!
-            httpResponse.setStatus(429); // Status: Too Many Requests
+            httpResponse.setStatus(429);
             httpResponse.setContentType("application/json;charset=UTF-8");
             httpResponse.getWriter().write("{ \"error\": \"Previše zahteva. Sačekaj minut pa pokušaj ponovo.\", \"site\": \"sandzaksell.com\" }");
         }
