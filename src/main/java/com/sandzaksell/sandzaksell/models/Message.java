@@ -21,12 +21,12 @@ public class Message {
 
     @ManyToOne
     @JoinColumn(name = "sender_id", nullable = false)
-    @JsonIgnoreProperties(ignoreUnknown = true, value = {"messages", "ads", "favorites", "password", "email", "tokens", "role", "tokenBalance", "username", "phone", "profileImageUrl", "enabled", "googleId", "resetCode", "resetCodeExpiresAt", "favoriteAds", "reviewsReceived", "reviewsGiven", "notifications", "reportsReceived"})
+    @JsonIgnoreProperties({"messages", "ads", "favorites", "password", "tokens", "role", "tokenBalance", "enabled", "googleId", "resetCode", "resetCodeExpiresAt", "favoriteAds", "reviewsReceived", "reviewsGiven", "notifications", "reportsReceived"})
     private User sender;
 
     @ManyToOne
     @JoinColumn(name = "receiver_id", nullable = false)
-    @JsonIgnoreProperties(ignoreUnknown = true, value = {"messages", "ads", "favorites", "password", "email", "tokens", "role", "tokenBalance", "username", "phone", "profileImageUrl", "enabled", "googleId", "resetCode", "resetCodeExpiresAt", "favoriteAds", "reviewsReceived", "reviewsGiven", "notifications", "reportsReceived"})
+    @JsonIgnoreProperties({"messages", "ads", "favorites", "password", "tokens", "role", "tokenBalance", "enabled", "googleId", "resetCode", "resetCodeExpiresAt", "favoriteAds", "reviewsReceived", "reviewsGiven", "notifications", "reportsReceived"})
     private User receiver;
 
     @Column(nullable = false, columnDefinition = "TEXT")
