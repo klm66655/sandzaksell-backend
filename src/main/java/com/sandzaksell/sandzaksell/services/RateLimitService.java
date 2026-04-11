@@ -20,10 +20,8 @@ public class RateLimitService {
     }
 
     private Bucket newBucket(String ipAddress) {
-        // KONFIGURACIJA: 20 requestova u minuti.
-        // Možeš promeniti na npr. 50 ako vidiš da je ljudima malo.
         return Bucket.builder()
-                .addLimit(Bandwidth.classic(20, Refill.intervally(20, Duration.ofMinutes(1))))
+                .addLimit(Bandwidth.classic(200, Refill.greedy(200, Duration.ofMinutes(1))))
                 .build();
     }
 }
