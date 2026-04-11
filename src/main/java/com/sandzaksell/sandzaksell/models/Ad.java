@@ -47,7 +47,7 @@ public class Ad {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties({"ads", "favoriteAds", "password", "email", "tokenBalance"}) // KLJUČNO: Ne povlači sve o vlasniku ovde
+    @JsonIgnoreProperties(ignoreUnknown = true, value = {"ads", "favoriteAds", "password", "email", "tokenBalance", "username", "phone", "profileImageUrl", "enabled", "googleId", "resetCode", "resetCodeExpiresAt", "reviewsReceived", "reviewsGiven", "notifications", "reportsReceived", "role"})
     private User user;
 
     @ManyToOne
