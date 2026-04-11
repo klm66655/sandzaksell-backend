@@ -85,10 +85,16 @@ public class AdController {
     }
 
     // POPRAVLJENO: @PreAuthorize zahteva @EnableMethodSecurity u SecurityConfig-u
-    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/make-premium")
-    public Ad makePremium(@PathVariable Long id) {
-        return adService.setAdPremium(id);
+    public ResponseEntity<?> makePremium(@PathVariable Long id, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body("Niste ulogovani!");
+
+        try {
+            Ad ad = adService.setAdPremium(id);
+            return ResponseEntity.ok(ad);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/user/{userId}")
