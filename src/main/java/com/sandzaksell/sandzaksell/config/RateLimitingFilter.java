@@ -31,6 +31,8 @@ public class RateLimitingFilter implements Filter {
             ipAddr = httpRequest.getRemoteAddr();
         }
 
+        System.out.println(">>> RATE LIMIT IP: " + ipAddr + " | Žetoni: " + rateLimitService.resolveBucket(ipAddr).getAvailableTokens());
+
         Bucket bucket = rateLimitService.resolveBucket(ipAddr);
 
         if (bucket.tryConsume(1)) {
