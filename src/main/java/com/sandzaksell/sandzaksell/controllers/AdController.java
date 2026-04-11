@@ -89,9 +89,16 @@ public class AdController {
     public ResponseEntity<?> makePremium(@PathVariable Long id, Principal principal) {
         if (principal == null) return ResponseEntity.status(401).body("Niste ulogovani!");
 
+        Ad ad = adService.getAdById(id);
+
+        // Provjeri da li je vlasnik oglasa
+        if (!ad.getUser().getUsername().equals(principal.getName())) {
+            return ResponseEntity.status(403).body("Ne možeš platiti premium za tuđi oglas!");
+        }
+
         try {
-            Ad ad = adService.setAdPremium(id);
-            return ResponseEntity.ok(ad);
+            Ad updatedAd = adService.setAdPremium(id);
+            return ResponseEntity.ok(updatedAd);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
