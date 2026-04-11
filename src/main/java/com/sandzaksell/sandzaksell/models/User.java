@@ -35,7 +35,7 @@ public class User {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     @NotBlank(message = "Lozinka ne može biti prazna!")
-    @Size(min = 8, message = "Lozinka mora imati bar 8 karaktera!")
+    @Size(min = 9, message = "Lozinka mora imati bar 9 karaktera!")
     private String password;
 
 
