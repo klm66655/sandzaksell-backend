@@ -4,6 +4,7 @@ import com.sandzaksell.sandzaksell.models.Ad;
 import com.sandzaksell.sandzaksell.models.User;
 import com.sandzaksell.sandzaksell.services.AdService;
 import com.sandzaksell.sandzaksell.repositories.UserRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,7 +41,7 @@ public class AdController {
     }
 
     @PostMapping
-    public Ad create(@RequestBody Ad ad, Principal principal) {
+    public Ad create(@Valid @RequestBody Ad ad, Principal principal) {
         if (principal == null) throw new RuntimeException("Niste ulogovani!");
 
         // Uzimamo usera preko username-a iz tokena

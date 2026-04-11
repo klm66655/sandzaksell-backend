@@ -1,6 +1,8 @@
 package com.sandzaksell.sandzaksell.models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import com.fasterxml.jackson.annotation.*;
 import java.util.*;
@@ -21,6 +23,8 @@ public class Ad {
     private String title;
 
     @Column(columnDefinition = "TEXT")
+    @NotBlank(message = "Opis oglasa je obavezan!")
+    @Size(min = 10, message = "Opis mora imati najmanje 10 karaktera!")
     private String description;
 
     private Double price;
